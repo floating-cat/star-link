@@ -1,0 +1,14 @@
+http://127.0.0.1:1100, http://localhost:1100 {
+  reverse_proxy /+wck9WA8AWsx/C8k6PibIQ== :1200
+  log {
+    output stdout
+  }
+}
+
+https://127.0.0.1:1101, https://localhost:1101 {
+  tls internal
+  reverse_proxy /+wck9WA8AWsx/C8k6PibIQ== :1200
+  log {
+    output stdout
+  }
+}
