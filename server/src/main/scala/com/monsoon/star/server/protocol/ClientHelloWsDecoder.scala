@@ -40,7 +40,7 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
         WsResponse.retain()
         ctx.writeAndFlush(WsResponse.duplicate())
         out.add(clientHelloInfo.get)
-        ctx.pipeline.remove(this)
+        ctx.pipeline().remove(this)
       case _ =>
         ctx.close()
     }

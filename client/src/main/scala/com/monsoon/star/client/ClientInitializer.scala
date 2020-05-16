@@ -9,7 +9,7 @@ import io.netty.handler.logging.{LogLevel, LoggingHandler}
 final class ClientInitializer(clientHandler: ClientHandler) extends ChannelInitializer[Channel] {
 
   override def initChannel(ch: Channel): Unit = {
-    ch.pipeline.addLast(new LoggingHandler(LogLevel.DEBUG),
+    ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG),
       new SocksPortUnificationServerHandler,
       clientHandler)
   }

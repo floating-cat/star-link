@@ -21,9 +21,9 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
       promise.addListener((future: Future[Channel]) => {
         val outChannel = future.getNow
         if (future.isSuccess) {
-          outChannel.pipeline.addLast(new RelayHandler(ctx.channel, RelayTag.ServerSender))
-          ctx.pipeline.addLast(new RelayHandler(outChannel, RelayTag.ServerReceiver))
-          ctx.pipeline.remove(this)
+          outChannel.pipeline().addLast(new RelayHandler(ctx.channel, RelayTag.ServerSender))
+          ctx.pipeline().addLast(new RelayHandler(outChannel, RelayTag.ServerReceiver))
+          ctx.pipeline().remove(this)
           outChannel.writeAndFlush(buffer)
         } else {
           ChannelUtil.closeOnFlush(ctx.channel)

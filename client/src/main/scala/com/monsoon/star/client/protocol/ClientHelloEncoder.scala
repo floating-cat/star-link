@@ -28,7 +28,7 @@ object ClientHelloEncoder {
     override def encode(ctx: ChannelHandlerContext, msg: Socks5CommandRequest, out: ByteBuf): Unit = {
       out.writeBytes(serverInfo.password.value)
       writeCommand(msg, out)
-      ctx.pipeline.remove(this)
+      ctx.pipeline().remove(this)
     }
   }
 
@@ -51,7 +51,7 @@ object ClientHelloEncoder {
       out.writeBytes(Base64.getEncoder.encode(buf.nioBuffer()))
       buf.release()
       out.writeBytes(requestBytesSuffix)
-      ctx.pipeline.remove(this)
+      ctx.pipeline().remove(this)
     }
 
     private def length(msg: Socks5CommandRequest): Int = {

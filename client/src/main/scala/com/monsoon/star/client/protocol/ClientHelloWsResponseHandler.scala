@@ -16,9 +16,9 @@ final class ClientHelloWsResponseHandler(nextHandler: ChannelInboundHandlerAdapt
       val result = headerParser.parse(buf)
       result match {
         case End =>
-          ctx.pipeline.addLast(nextHandler)
+          ctx.pipeline().addLast(nextHandler)
           ctx.fireChannelRead(buf)
-          ctx.pipeline.remove(this)
+          ctx.pipeline().remove(this)
         case Suspension =>
         case _ =>
           loop()
