@@ -15,9 +15,8 @@ object Server {
 
     configEither match {
       case Right(config) =>
-        val general = config.general
-        val socketAddress = new InetSocketAddress(general.listenIp.toInetAddress, general.port.value)
-        BootstrapUtil.server(socketAddress, new ServerInitializer(general.password))
+        val socketAddress = new InetSocketAddress(config.listenIp.toInetAddress,config.listenPort.value)
+        BootstrapUtil.server(socketAddress, new ServerInitializer(config.password))
 
       case Left(configReaderFailures) =>
         print(configReaderFailures.prettyPrint())
