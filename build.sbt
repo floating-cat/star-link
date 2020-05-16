@@ -23,6 +23,9 @@ lazy val commonDependencies = Seq(
 
   "com.github.pureconfig" %% "pureconfig" % "0.12.3",
   "com.github.seancfoley" % "ipaddress" % "5.2.1",
+
+  "org.apache.logging.log4j" % "log4j-api" % "2.13.3",
+  "org.apache.logging.log4j" % "log4j-core" % "2.13.3",
 )
 
 // TODO
