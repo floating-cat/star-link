@@ -8,52 +8,40 @@ import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
 import io.netty.handler.codec.socksx.SocksMessage
 import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandRequest, Socks5CommandStatus}
-import io.netty.util.concurrent.{Future, PromiseCombiner}
+import io.netty.util.concurrent.Future
 
 import scala.collection.concurrent.TrieMap
+import scala.util.chaining._
 
 @Sharable
 final class ClientConnectHandler private(stringTag: StringTag, serverInfo: ServerInfo, devMode: Boolean)
   extends SimpleChannelInboundHandler[SocksMessage] {
 
-  override def channelRead0(ctx: ChannelHandlerContext, message: SocksMessage): Unit = {
+  override def channelRead0(inContext: ChannelHandlerContext, message: SocksMessage): Unit = {
     message match {
-      case request: Socks5CommandRequest =>
-        val promise = ctx.executor.newPromise[Channel]
+      case commandRequest: Socks5CommandRequest =>
+        val promise = inContext.executor.newPromise[Channel]
         promise.addListener((future: Future[Channel]) => {
           if (future.isSuccess) {
             val outChannel = future.getNow
-            val outPipe = outChannel.pipeline()
-
-            outPipe.addLast(SslUtil.handler(outChannel, devMode),
+            outChannel.pipeline().addLast(
+              SslUtil.handler(outChannel, devMode),
               ClientHelloEncoder(stringTag, serverInfo))
-            val requestFuture = outChannel.writeAndFlush(request)
 
-            val responseFuture = ctx.channel.writeAndFlush(
-              new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
-                request.dstAddrType, request.dstAddr, request.dstPort))
-
-            outPipe.addLast(new ClientHelloWsResponseHandler(
-              new RelayHandler(ctx.channel, RelayTag.ClientSender),
-              TimeoutUtil.removeTimeoutHandlers(ctx.pipeline())))
-            ctx.pipeline
-              .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
-              .remove(this)
-
-            val combiner = new PromiseCombiner(ctx.executor())
-            combiner.addAll(requestFuture, responseFuture)
-            combiner.finish(ctx.newPromise().addListener((combinedFuture: ChannelFuture) => {
-              if (!combinedFuture.isSuccess) {
-                ChannelUtil.closeOnFlush(outChannel)
-                ChannelUtil.closeOnFlush(ctx.channel)
-              }
-            }))
+            outChannel.writeAndFlush(commandRequest)
+              .addListener((requestFuture: ChannelFuture) => {
+                if (requestFuture.isSuccess) {
+                  sendSuccessResponseAndStartRelay(inContext, outChannel, commandRequest)
+                } else {
+                  sendFailureResponse(inContext, commandRequest)
+                }
+              })
           } else {
-            sendFailureResponse(ctx, request)
+            sendFailureResponse(inContext, commandRequest)
           }
         })
 
-        val inboundChannel = ctx.channel
+        val inboundChannel = inContext.channel
         new Bootstrap()
           .group(inboundChannel.eventLoop)
           .channel(Engine.Default.socketChannelClass)
@@ -62,12 +50,39 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
           .connect(serverInfo.hostname.asInetSocketAddress())
           .addListener((future: ChannelFuture) => {
             if (!future.isSuccess) {
-              sendFailureResponse(ctx, request)
+              sendFailureResponse(inContext, commandRequest)
             }
           })
 
-      case _ => ctx.close
+      case _ => inContext.close
     }
+  }
+
+  private def sendSuccessResponseAndStartRelay(inContext: ChannelHandlerContext, outChannel: Channel,
+                                               commandRequest: Socks5CommandRequest) = {
+    outChannel.pipeline().addLast(new ClientHelloWsResponseHandler({
+      val response = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
+        commandRequest.dstAddrType, commandRequest.dstAddr, commandRequest.dstPort)
+
+      inContext.channel.writeAndFlush(response)
+        .addListener((responseFuture: ChannelFuture) => {
+          if (responseFuture.isSuccess) {
+            relayAndRemoveUnneededHandlers(inContext, outChannel)
+          } else {
+            ChannelUtil.closeOnFlush(inContext.channel)
+            ChannelUtil.closeOnFlush(outChannel)
+          }
+        })
+    }))
+  }
+
+  private def relayAndRemoveUnneededHandlers(inContext: ChannelHandlerContext, outChannel: Channel) = {
+    inContext.pipeline
+      .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
+      .remove(this)
+      .pipe(TimeoutUtil.removeTimeoutHandlers)
+    outChannel.pipeline()
+      .addLast(new RelayHandler(inContext.channel, RelayTag.ClientSender))
   }
 
   private def sendFailureResponse(ctx: ChannelHandlerContext, request: Socks5CommandRequest): Unit = {
