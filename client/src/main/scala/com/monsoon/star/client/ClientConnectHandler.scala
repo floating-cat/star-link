@@ -13,7 +13,7 @@ import io.netty.util.concurrent.{Future, PromiseCombiner}
 import scala.collection.concurrent.TrieMap
 
 @Sharable
-final class ClientConnectHandler private(stringTag: StringTag, serverInfo: ServerInfo)
+final class ClientConnectHandler private(stringTag: StringTag, serverInfo: ServerInfo, devMode: Boolean)
   extends SimpleChannelInboundHandler[SocksMessage] {
 
   override def channelRead0(ctx: ChannelHandlerContext, message: SocksMessage): Unit = {
@@ -24,10 +24,8 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
           if (future.isSuccess) {
             val outChannel = future.getNow
             val outPipe = outChannel.pipeline
-            // outPipe.addLast(SslUtil.handler(outChannel))
 
-            val clientHelloEncoder = ClientHelloEncoder(stringTag, serverInfo)
-            outPipe.addLast(clientHelloEncoder)
+            outPipe.addLast(SslUtil.handler(outChannel, devMode), ClientHelloEncoder(stringTag, serverInfo))
             val requestFuture = outChannel.writeAndFlush(request)
 
             val responseFuture = ctx.channel.writeAndFlush(
@@ -86,6 +84,6 @@ object ClientConnectHandler {
 
   private val pool = TrieMap[StringTag, ClientConnectHandler]()
 
-  def apply(stringTag: StringTag, serverInfo: ServerInfo): ClientConnectHandler =
-    pool.getOrElseUpdate(stringTag, new ClientConnectHandler(stringTag, serverInfo))
+  def apply(stringTag: StringTag, serverInfo: ServerInfo, devMode: Boolean): ClientConnectHandler =
+    pool.getOrElseUpdate(stringTag, new ClientConnectHandler(stringTag, serverInfo, devMode))
 }
