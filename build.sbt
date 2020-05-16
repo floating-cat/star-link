@@ -16,8 +16,10 @@ lazy val server = project
 val nettyVersion = "4.1.49.Final"
 lazy val commonDependencies = Seq(
   "io.netty" % "netty-all" % nettyVersion,
+  // TODO
   "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
   "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64",
+  "io.netty" % "netty-tcnative-boringssl-static" % "2.0.30.Final",
 
   "commons-codec" % "commons-codec" % "1.14",
 

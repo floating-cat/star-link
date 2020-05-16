@@ -15,7 +15,7 @@ object Client {
     configEither match {
       case Right(config) =>
         val socketAddress = config.toSocks5InetSocketAddress
-        val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy))
+        val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, config.devMode))
         BootstrapUtil.server(socketAddress, clientInitializer)
 
       case Left(configReaderFailures) =>

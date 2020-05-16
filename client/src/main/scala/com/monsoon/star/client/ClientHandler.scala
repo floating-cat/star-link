@@ -8,7 +8,7 @@ import io.netty.handler.codec.socksx.SocksVersion._
 import io.netty.handler.codec.socksx.v5._
 
 @Sharable
-final class ClientHandler(proxy: Proxy) extends SimpleChannelInboundHandler[SocksMessage] {
+final class ClientHandler(proxy: Proxy, devMode: Boolean) extends SimpleChannelInboundHandler[SocksMessage] {
 
   override def channelRead0(ctx: ChannelHandlerContext, socksRequest: SocksMessage): Unit = {
     socksRequest.version match {
@@ -25,7 +25,7 @@ final class ClientHandler(proxy: Proxy) extends SimpleChannelInboundHandler[Sock
             if (socks5CmdRequest.`type` == Socks5CommandType.CONNECT) {
               // TODO
               val serverInfo = proxy.server(proxy.default)
-              val clientConnectHandler = ClientConnectHandler(proxy.default, serverInfo)
+              val clientConnectHandler = ClientConnectHandler(proxy.default, serverInfo, devMode)
               ctx.pipeline.addLast(clientConnectHandler)
               ctx.fireChannelRead(socksRequest)
               ctx.pipeline.remove(this)
