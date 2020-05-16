@@ -109,3 +109,7 @@ fabric.properties
 .idea/sonarlint
 
 # End of https://www.gitignore.io/api/intellij
+
+/star_link_client.log
+/star_link_server.log
+/star_link_server_wireshark.log
