@@ -34,15 +34,16 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
               new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
                 request.dstAddrType, request.dstAddr, request.dstPort))
 
+            outPipe.addLast(new ClientHelloWsResponseHandler(
+              new RelayHandler(ctx.channel, RelayTag.ClientSender)))
+            ctx.pipeline
+              .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
+              .remove(this)
+
             val combiner = new PromiseCombiner(ctx.executor())
             combiner.addAll(requestFuture, responseFuture)
             combiner.finish(ctx.newPromise().addListener((combinedFuture: ChannelFuture) => {
-              if (combinedFuture.isSuccess) {
-                outPipe.addLast(new ClientHelloWsResponseHandler(
-                  new RelayHandler(ctx.channel, RelayTag.ClientSender)))
-                ctx.pipeline.addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
-                ctx.pipeline.remove(this)
-              } else {
+              if (!combinedFuture.isSuccess) {
                 ChannelUtil.closeOnFlush(outChannel)
                 ChannelUtil.closeOnFlush(ctx.channel)
               }
