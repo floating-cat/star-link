@@ -10,11 +10,10 @@ object BootstrapUtil {
 
   def server(socketAddress: SocketAddress, childHandler: ChannelHandler): Unit = {
     // TODO
-    val bossGroup = Engine.Default.eventLoopGroup(1)
-    val workerGroup = Engine.Default.eventLoopGroup(1)
+    val group = Engine.Default.eventLoopGroup(1)
     try {
       new ServerBootstrap()
-        .group(bossGroup, workerGroup)
+        .group(group)
         .channel(Engine.Default.serverSocketChannelClass)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(childHandler)
@@ -22,8 +21,7 @@ object BootstrapUtil {
         .channel()
         .closeFuture().sync()
     } finally {
-      bossGroup.shutdownGracefully()
-      workerGroup.shutdownGracefully()
+      group.shutdownGracefully()
     }
   }
 }
