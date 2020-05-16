@@ -4,9 +4,9 @@ import java.nio.charset.StandardCharsets
 import java.util
 import java.util.Base64
 
+import com.monsoon.star._
 import com.monsoon.star.config.Password
 import com.monsoon.star.server.protocol.ClientHelloWsDecoder.{ClientHelloInfoRegex, PasswordRegex, WsResponse}
-import com.monsoon.star.{End, HeaderParser, Suspension, Value}
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
@@ -40,7 +40,9 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
         WsResponse.retain()
         ctx.writeAndFlush(WsResponse.duplicate())
         out.add(clientHelloInfo.get)
+
         ctx.pipeline().remove(this)
+        TimeoutUtil.removeTimeoutHandlers(ctx.pipeline())
       case _ =>
         ctx.close()
     }

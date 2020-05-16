@@ -34,7 +34,8 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
                 request.dstAddrType, request.dstAddr, request.dstPort))
 
             outPipe.addLast(new ClientHelloWsResponseHandler(
-              new RelayHandler(ctx.channel, RelayTag.ClientSender)))
+              new RelayHandler(ctx.channel, RelayTag.ClientSender),
+              TimeoutUtil.removeTimeoutHandlers(ctx.pipeline())))
             ctx.pipeline
               .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
               .remove(this)
@@ -56,7 +57,7 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
         new Bootstrap()
           .group(inboundChannel.eventLoop)
           .channel(Engine.Default.socketChannelClass)
-          .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+          .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
           .handler(new DirectClientHandler(promise))
           .connect(serverInfo.hostname.asInetSocketAddress())
           .addListener((future: ChannelFuture) => {

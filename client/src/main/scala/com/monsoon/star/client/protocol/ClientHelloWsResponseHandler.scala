@@ -4,7 +4,8 @@ import com.monsoon.star.{End, HeaderParser, Suspension}
 import io.netty.buffer.ByteBuf
 import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
 
-final class ClientHelloWsResponseHandler(nextHandler: ChannelInboundHandlerAdapter) extends ChannelInboundHandlerAdapter {
+final class ClientHelloWsResponseHandler(nextHandler: ChannelInboundHandlerAdapter,
+                                         endAction: => Unit) extends ChannelInboundHandlerAdapter {
 
   private val headerParser = new HeaderParser()
 
@@ -18,7 +19,9 @@ final class ClientHelloWsResponseHandler(nextHandler: ChannelInboundHandlerAdapt
         case End =>
           ctx.pipeline().addLast(nextHandler)
           ctx.fireChannelRead(buf)
+
           ctx.pipeline().remove(this)
+          endAction
         case Suspension =>
         case _ =>
           loop()
