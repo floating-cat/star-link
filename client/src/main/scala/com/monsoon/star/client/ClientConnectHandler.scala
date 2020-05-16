@@ -25,7 +25,8 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
             val outChannel = future.getNow
             val outPipe = outChannel.pipeline()
 
-            outPipe.addLast(SslUtil.handler(outChannel, devMode), ClientHelloEncoder(stringTag, serverInfo))
+            outPipe.addLast(SslUtil.handler(outChannel, devMode),
+              ClientHelloEncoder(stringTag, serverInfo))
             val requestFuture = outChannel.writeAndFlush(request)
 
             val responseFuture = ctx.channel.writeAndFlush(
