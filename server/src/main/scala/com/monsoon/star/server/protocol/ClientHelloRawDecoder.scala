@@ -19,8 +19,8 @@ final class ClientHelloDecoder(password: Password) extends ByteToMessageDecoder 
       val passwordByteBuf = in.readBytes(passwordBytesLength)
       if (passwordByteBuf == pw) {
         passwordByteBuf.release()
-        ctx.pipeline.addAfter(ctx.name, null, new ClientHelloInfoDecoder)
-        ctx.pipeline.remove(this)
+        ctx.pipeline().addAfter(ctx.name, null, new ClientHelloInfoDecoder)
+        ctx.pipeline().remove(this)
       } else {
         ctx.close
       }
@@ -33,7 +33,7 @@ final class ClientHelloInfoDecoder extends ReplayingDecoder[Void] {
   @throws[Exception]
   override def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
     out.add(decodeCommand(in))
-    ctx.pipeline.remove(this)
+    ctx.pipeline().remove(this)
   }
 }
 

@@ -23,7 +23,7 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
         promise.addListener((future: Future[Channel]) => {
           if (future.isSuccess) {
             val outChannel = future.getNow
-            val outPipe = outChannel.pipeline
+            val outPipe = outChannel.pipeline()
 
             outPipe.addLast(SslUtil.handler(outChannel, devMode), ClientHelloEncoder(stringTag, serverInfo))
             val requestFuture = outChannel.writeAndFlush(request)
@@ -69,7 +69,7 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
   }
 
   private def sendFailureResponse(ctx: ChannelHandlerContext, request: Socks5CommandRequest): Unit = {
-    ctx.channel.writeAndFlush(new DefaultSocks5CommandResponse(
+    ctx.channel().writeAndFlush(new DefaultSocks5CommandResponse(
       Socks5CommandStatus.FAILURE, request.dstAddrType))
     ChannelUtil.closeOnFlush(ctx.channel)
   }

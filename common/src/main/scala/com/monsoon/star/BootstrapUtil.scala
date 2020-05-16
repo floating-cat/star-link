@@ -18,8 +18,9 @@ object BootstrapUtil {
         .channel(Engine.Default.serverSocketChannelClass)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(childHandler)
-        .bind(socketAddress).sync
-        .channel.closeFuture.sync
+        .bind(socketAddress).sync()
+        .channel()
+        .closeFuture().sync()
     } finally {
       bossGroup.shutdownGracefully()
       workerGroup.shutdownGracefully()

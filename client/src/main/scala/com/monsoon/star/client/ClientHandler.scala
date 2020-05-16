@@ -15,20 +15,20 @@ final class ClientHandler(proxy: Proxy, devMode: Boolean) extends SimpleChannelI
       case SOCKS5 =>
         socksRequest match {
           case _: Socks5InitialRequest =>
-            ctx.pipeline.remove(classOf[Socks5InitialRequestDecoder])
-            ctx.pipeline.addFirst(new Socks5CommandRequestDecoder)
+            ctx.pipeline().remove(classOf[Socks5InitialRequestDecoder])
+            ctx.pipeline().addFirst(new Socks5CommandRequestDecoder)
             ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
 
           case socks5CmdRequest: Socks5CommandRequest =>
-            ctx.pipeline.remove(classOf[Socks5CommandRequestDecoder])
+            ctx.pipeline().remove(classOf[Socks5CommandRequestDecoder])
             // TODO
             if (socks5CmdRequest.`type` == Socks5CommandType.CONNECT) {
               // TODO
               val serverInfo = proxy.server(proxy.default)
               val clientConnectHandler = ClientConnectHandler(proxy.default, serverInfo, devMode)
-              ctx.pipeline.addLast(clientConnectHandler)
+              ctx.pipeline().addLast(clientConnectHandler)
               ctx.fireChannelRead(socksRequest)
-              ctx.pipeline.remove(this)
+              ctx.pipeline().remove(this)
             } else ctx.close
 
           case _ => ctx.close
