@@ -13,5 +13,6 @@ final class DirectClientHandler(promise: Promise[Channel]) extends ChannelInboun
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     cause.printStackTrace()
     promise.setFailure(cause)
+    ctx.close()
   }
 }

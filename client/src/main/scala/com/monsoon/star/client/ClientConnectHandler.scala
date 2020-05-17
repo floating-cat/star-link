@@ -7,7 +7,7 @@ import io.netty.bootstrap.Bootstrap
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
 import io.netty.handler.codec.socksx.SocksMessage
-import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandRequest, Socks5CommandStatus}
+import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandRequest, Socks5CommandStatus, Socks5ServerEncoder}
 import io.netty.util.concurrent.Future
 
 import scala.collection.concurrent.TrieMap
@@ -22,20 +22,24 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
       case commandRequest: Socks5CommandRequest =>
         val promise = inContext.executor.newPromise[Channel]
         promise.addListener((future: Future[Channel]) => {
-          val outChannel = future.getNow
-          outChannel.pipeline().addLast(
-            SslUtil.handler(outChannel, devMode),
-            ClientHelloEncoder(stringTag, serverInfo))
+          if (future.isSuccess) {
+            val outChannel = future.getNow
+            outChannel.pipeline().addLast(
+              SslUtil.handler(outChannel, devMode),
+              ClientHelloEncoder(stringTag, serverInfo))
 
-          outChannel.writeAndFlush(commandRequest)
-            .addListener((requestFuture: ChannelFuture) => {
-              if (requestFuture.isSuccess) {
-                sendSuccessResponseAndStartRelay(inContext, outChannel, commandRequest)
-              } else {
-                sendFailureResponse(inContext, commandRequest)
-                ChannelUtil.closeOnFlush(outChannel)
-              }
-            })
+            outChannel.writeAndFlush(commandRequest)
+              .addListener((requestFuture: ChannelFuture) => {
+                if (requestFuture.isSuccess) {
+                  sendSuccessResponseAndStartRelay(inContext, outChannel, commandRequest)
+                } else {
+                  sendFailureResponse(inContext, commandRequest)
+                  ChannelUtil.closeOnFlush(outChannel)
+                }
+              })
+          } else {
+            sendFailureResponse(inContext, commandRequest)
+          }
         })
 
         val inboundChannel = inContext.channel
