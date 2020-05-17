@@ -22,23 +22,20 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
       case commandRequest: Socks5CommandRequest =>
         val promise = inContext.executor.newPromise[Channel]
         promise.addListener((future: Future[Channel]) => {
-          if (future.isSuccess) {
-            val outChannel = future.getNow
-            outChannel.pipeline().addLast(
-              SslUtil.handler(outChannel, devMode),
-              ClientHelloEncoder(stringTag, serverInfo))
+          val outChannel = future.getNow
+          outChannel.pipeline().addLast(
+            SslUtil.handler(outChannel, devMode),
+            ClientHelloEncoder(stringTag, serverInfo))
 
-            outChannel.writeAndFlush(commandRequest)
-              .addListener((requestFuture: ChannelFuture) => {
-                if (requestFuture.isSuccess) {
-                  sendSuccessResponseAndStartRelay(inContext, outChannel, commandRequest)
-                } else {
-                  sendFailureResponse(inContext, commandRequest)
-                }
-              })
-          } else {
-            sendFailureResponse(inContext, commandRequest)
-          }
+          outChannel.writeAndFlush(commandRequest)
+            .addListener((requestFuture: ChannelFuture) => {
+              if (requestFuture.isSuccess) {
+                sendSuccessResponseAndStartRelay(inContext, outChannel, commandRequest)
+              } else {
+                sendFailureResponse(inContext, commandRequest)
+                ChannelUtil.closeOnFlush(outChannel)
+              }
+            })
         })
 
         val inboundChannel = inContext.channel
