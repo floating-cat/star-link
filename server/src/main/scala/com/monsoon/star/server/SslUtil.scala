@@ -10,6 +10,7 @@ object SslUtil {
     val ssc = new SelfSignedCertificate
     val sslEngine = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
       .sslProvider(SslProvider.OPENSSL_REFCNT)
+      .protocols("TLSv1.3", "TLSv1.2")
       .build()
       .newEngine(ch.alloc())
     new SslHandler(sslEngine)

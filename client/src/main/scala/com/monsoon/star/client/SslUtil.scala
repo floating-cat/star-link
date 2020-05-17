@@ -15,9 +15,7 @@ object SslUtil {
         if (!trustInsecure) {
           builder.protocols("TLSv1.3")
         } else {
-          // TODO
-          // SslMasterKeyHandler.newWireSharkSslMasterKeyHandler() doesn't support TLS 1.3
-          builder.protocols("TLSv1.2")
+          builder.protocols("TLSv1.3", "TLSv1.2")
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
         }
       }.build()
