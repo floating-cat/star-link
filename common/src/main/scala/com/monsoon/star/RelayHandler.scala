@@ -15,7 +15,7 @@ final class RelayHandler(relayChannel: Channel, tag: RelayTag.Value) extends Cha
     relayChannel.flush()
 
   override def channelWritabilityChanged(ctx: ChannelHandlerContext): Unit =
-    ctx.channel().config().setAutoRead(ctx.channel().isWritable)
+    relayChannel.config().setAutoRead(ctx.channel().isWritable)
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit =
     ChannelUtil.closeOnFlush(relayChannel)
