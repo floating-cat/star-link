@@ -82,6 +82,7 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
       .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
       .remove(this)
       .pipe(TimeoutUtil.removeTimeoutHandlers)
+      .remove(classOf[Socks5ServerEncoder])
     outChannel.pipeline()
       .addLast(new RelayHandler(inContext.channel, RelayTag.ClientSender))
   }
