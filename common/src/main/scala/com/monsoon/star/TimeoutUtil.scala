@@ -31,7 +31,7 @@ private class IdleStateEventHandler extends ChannelDuplexHandler {
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
     evt match {
       case _: IdleStateEvent =>
-        ctx.pipeline().channel().close()
+        ctx.close()
       case _ =>
     }
   }
