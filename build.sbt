@@ -13,7 +13,7 @@ lazy val client = project
 lazy val server = project
   .dependsOn(common)
 
-val nettyVersion = "4.1.49.Final"
+val nettyVersion = "4.1.50.Final"
 lazy val commonDependencies = Seq(
   "io.netty" % "netty-all" % nettyVersion,
   // TODO
@@ -24,7 +24,7 @@ lazy val commonDependencies = Seq(
   "commons-codec" % "commons-codec" % "1.14",
 
   "com.github.pureconfig" %% "pureconfig" % "0.12.3",
-  "com.github.seancfoley" % "ipaddress" % "5.2.1",
+  "com.github.seancfoley" % "ipaddress" % "5.3.1",
 
   "org.apache.logging.log4j" % "log4j-api" % "2.13.3",
   "org.apache.logging.log4j" % "log4j-core" % "2.13.3",
