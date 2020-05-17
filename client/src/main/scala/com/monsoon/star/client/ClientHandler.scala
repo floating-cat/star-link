@@ -1,5 +1,6 @@
 package com.monsoon.star.client
 
+import com.monsoon.star.TimeoutUtil
 import com.monsoon.star.client.config.Proxy
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{ChannelHandlerContext, SimpleChannelInboundHandler}
@@ -16,7 +17,7 @@ final class ClientHandler(proxy: Proxy, devMode: Boolean) extends SimpleChannelI
         socksRequest match {
           case _: Socks5InitialRequest =>
             ctx.pipeline().remove(classOf[Socks5InitialRequestDecoder])
-            ctx.pipeline().addFirst(new Socks5CommandRequestDecoder)
+            TimeoutUtil.insertDecoder(ctx.pipeline(), new Socks5CommandRequestDecoder)
             ctx.write(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
 
           case socks5CmdRequest: Socks5CommandRequest =>
