@@ -35,7 +35,7 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
 
       val inboundChannel = inContext.channel
       new Bootstrap().group(inboundChannel.eventLoop)
-        .channel(Engine.Default.socketChannelClass)
+        .channel(NettyEngine.Default.socketChannelClass)
         .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
         .handler(new DirectClientHandler(promise))
         .connect(request.dstAddr, request.dstPort).addListener((future: ChannelFuture) => {

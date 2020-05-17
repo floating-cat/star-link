@@ -10,11 +10,11 @@ object BootstrapUtil {
 
   def server(socketAddress: SocketAddress, childHandler: ChannelHandler): Unit = {
     // TODO
-    val group = Engine.Default.eventLoopGroup(1)
+    val group = NettyEngine.Default.eventLoopGroup(1)
     try {
       new ServerBootstrap()
         .group(group)
-        .channel(Engine.Default.serverSocketChannelClass)
+        .channel(NettyEngine.Default.serverSocketChannelClass)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(childHandler)
         .bind(socketAddress).sync()

@@ -41,7 +41,7 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
         val inboundChannel = inContext.channel
         new Bootstrap()
           .group(inboundChannel.eventLoop)
-          .channel(Engine.Default.socketChannelClass)
+          .channel(NettyEngine.Default.socketChannelClass)
           .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
           .handler(new DirectClientHandler(promise))
           .connect(serverInfo.hostname.asInetSocketAddress())
