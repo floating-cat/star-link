@@ -9,7 +9,7 @@ import inet.ipaddr.{HostName, IPAddress}
 import scala.collection.immutable.Map
 
 final case class ClientConfig(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
-                              proxy: Proxy, devMode: Boolean = false) {
+                              proxy: Proxy, testMode: Boolean = false) {
   def toSocks5InetSocketAddress: InetSocketAddress =
     new InetSocketAddress(listenIp.toInetAddress, listenPort.value)
 }

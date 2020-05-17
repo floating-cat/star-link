@@ -5,7 +5,7 @@ import com.monsoon.star.server.config.ServerConfig.{DefaultAddress, DefaultPort}
 import inet.ipaddr.IPAddress
 
 final case class ServerConfig(listenPort: Port = DefaultPort, listenIp: IPAddress = DefaultAddress,
-                              password: Password, devMode: Boolean = false)
+                              password: Password, testMode: Boolean = false)
 
 object ServerConfig {
   val DefaultPort: Port = Port(1200).getOrElse(throw new Exception)
