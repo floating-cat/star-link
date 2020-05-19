@@ -7,7 +7,7 @@ final class RelayHandler(relayChannel: Channel, tag: RelayTag.Value) extends Cha
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit =
     if (relayChannel.isActive)
-      relayChannel.write(msg)
+      relayChannel.write(msg, relayChannel.voidPromise())
     else
       ReferenceCountUtil.release(msg)
 
