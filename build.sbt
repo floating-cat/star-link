@@ -3,10 +3,22 @@ ThisBuild / organization := "cl.monsoon"
 ThisBuild / version := "0.1"
 ThisBuild / scalaVersion := "2.13.2"
 
+lazy val root = project in file(".")
+
+lazy val link = project
+  .dependsOn(client, server)
+  .settings(
+    buildInfoKeys := Seq[BuildInfoKey](root / name, version),
+    buildInfoPackage := s"${organization.value}.star",
+    libraryDependencies += "com.monovore" %% "decline" % "1.2.0"
+  )
+  .enablePlugins(BuildInfoPlugin)
+
 lazy val common = project
   .settings(
     libraryDependencies ++= commonDependencies
   )
+
 lazy val client = project
   .dependsOn(common)
 
