@@ -1,6 +1,6 @@
 package cl.monsoon.star.link
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import cats.data.Validated
 import cats.implicits._
@@ -24,14 +24,15 @@ object Star extends CommandApp(
 
     val clientOpt = Opts.flag("client", "Run as a client", "c")
       .as(CommandType.Client)
+    // TODO: JDK 13
     val clientConfigOpt = Opts.argument[Path](metavar = "config file (default \"client.conf\")")
-      .withDefault(Path.of("client.conf"))
+      .withDefault(Paths.get("client.conf"))
       .pipe(validateExist)
 
     val serverOpt = Opts.flag("server", "Run as a server", "s")
       .as(CommandType.Server)
     val serverConfigOpt = Opts.argument[Path](metavar = "config file (default \"server.conf\")")
-      .withDefault(Path.of("server.conf"))
+      .withDefault(Paths.get("server.conf"))
       .pipe(validateExist)
 
     helpOpt.orElse((clientOpt, clientConfigOpt).tupled)
