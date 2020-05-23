@@ -2,7 +2,7 @@ package cl.monsoon.star.client.config
 
 import cl.monsoon.star.config.IpAddressUtil
 import pureconfig.ConfigReader.Result
-import pureconfig.error.{CannotConvert, ConfigReaderFailures, FailureReason}
+import pureconfig.error.{CannotConvert, ConfigReaderFailure, ConfigReaderFailures, FailureReason}
 import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader, ConvertHelpers}
 
 import scala.collection.immutable.Map
@@ -19,8 +19,8 @@ object ClientConfigReader {
 
   implicit val proxyReader: ConfigReader[Proxy] =
     ConfigReader.fromCursor[Proxy] { cur =>
-      val defaultKey = "default"
       cur.asObjectCursor.flatMap { objCur =>
+        val defaultKey = "default"
         val proxyMap = objCur.map.removed(defaultKey)
           .map { case (key, value) =>
             (objCur.atKeyOrUndefined(key).scopeFailure(ClientConfigResultUtil.toStringTag(key)),
@@ -67,9 +67,9 @@ object ClientConfigReader {
 
   private def toRuleSetResult(configCursor: ConfigCursor): Result[RuleSet] = {
     val domainSuffixResult = configCursor.fluent.at("domain-suffix").asListCursor
-      .map(a => map0(a, IpAddressUtil.toDomainName))
+      .map(cur => parseList(cur, IpAddressUtil.toDomainName))
     val ipCidrResult = configCursor.fluent.at("ip-cidr").asListCursor
-      .map(a => map0(a, IpAddressUtil.toIpOrCidr))
+      .map(cur => parseList(cur, IpAddressUtil.toIpOrCidr))
 
     (domainSuffixResult, ipCidrResult) match {
       case (Left(_), Right(r)) => r.map(RuleSet(List.empty, _))
@@ -79,31 +79,43 @@ object ClientConfigReader {
     }
   }
 
-  private def map0[A](configListCursor: ConfigListCursor, f: String => A)
-                     (implicit ct: ClassTag[A]): Result[List[A]] = {
-    configListCursor.list.foldLeft[Result[ListBuffer[A]]](Right(ListBuffer.empty)) { (hostNamesEither, cur) =>
+  private def sequence[A, B](map: Map[Result[A], Result[B]]): Result[Map[A, B]] =
+    map.foldLeft[Either[mutable.ListBuffer[ConfigReaderFailure], mutable.Builder[(A, B), Map[A, B]]]](
+      Right(Map.newBuilder)) {
+      case (Right(builder), (Right(key), Right(value))) => Right(builder += ((key, value)))
+      case (Left(errs), (Left(err), Left(errr))) => Left(concat(errs, err, errr))
+      case (Left(errs), (Left(err), _)) => Left(concat(errs, err))
+      case (Left(errs), (_, Left(err))) => Left(concat(errs, err))
+      case (Left(errs), _) => Left(errs)
+      case (_, (Left(err), Left(errr))) => Left(concat0(err, errr))
+      case (_, (Left(err), _)) => Left(concat0(err))
+      case (_, (_, Left(err))) => Left(concat0(err))
+    }.map(_.result())
+      .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
+
+  private def parseList[A](configListCursor: ConfigListCursor, f: String => A)
+                          (implicit ct: ClassTag[A]): Result[List[A]] =
+    configListCursor.list.foldLeft[Either[ListBuffer[ConfigReaderFailure], ListBuffer[A]]](Right(ListBuffer.empty)) { (hostsEither, cur) =>
       val hostEither = cur.asString.flatMap { domain =>
         cur.scopeFailure(ConvertHelpers.catchReadError(f).apply(domain))
       }
 
-      (hostNamesEither, hostEither) match {
-        case (Right(xs), Right(x)) => Right(xs.addOne(x))
-        case (Left(xs), Left(xss)) => Left(xs ++ xss)
-        case (Left(xs), _) => Left(xs)
-        case (_, Left(xs)) => Left(xs)
+      (hostsEither, hostEither) match {
+        case (Right(hosts), Right(host)) => Right(hosts += host)
+        case (Left(errs), Left(err)) => Left(concat(errs, err))
+        case (Left(errs), _) => Left(errs)
+        case (_, Left(err)) => Left(concat0(err))
       }
     }.map(_.result())
+      .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
+
+  private def concat(buf: ListBuffer[ConfigReaderFailure], errs: ConfigReaderFailures*): ListBuffer[ConfigReaderFailure] = {
+    errs.foreach(err => buf += err.head ++= err.tail)
+    buf
   }
 
-  private def sequence[A, B](map: Map[Result[A], Result[B]]): Result[Map[A, B]] =
-    map.foldLeft(Right(Map.newBuilder[A, B]): Result[mutable.Builder[(A, B), Map[A, B]]]) {
-      case (Right(builder), (Right(a), Right(b))) => Right(builder.addOne((a, b)))
-      case (Left(errs), (Left(err), _)) => Left(errs ++ err)
-      case (Left(errs), (_, Left(err))) => Left(errs ++ err)
-      case (Left(errs), _) => Left(errs)
-      case (_, (Left(err), _)) => Left(err)
-      case (_, (_, Left(err))) => Left(err)
-    }.map(_.result())
+  private def concat0(errs: ConfigReaderFailures*): ListBuffer[ConfigReaderFailure] =
+    concat(ListBuffer.empty, errs: _*)
 
   private object ProxyInfoNotFound extends FailureReason {
     override def description: String =
