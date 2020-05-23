@@ -1,7 +1,7 @@
 package cl.monsoon.star.client
 
 import cl.monsoon.star.client.config.{ServerInfo, ProxyTag}
-import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ClientHelloWsResponseHandler}
+import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ServerHelloWsHandler}
 import cl.monsoon.star._
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.ChannelHandler.Sharable
@@ -61,7 +61,7 @@ final class ClientConnectHandler private(stringTag: ProxyTag, serverInfo: Server
 
   private def sendSuccessResponseAndStartRelay(inContext: ChannelHandlerContext, outChannel: Channel,
                                                commandRequest: Socks5CommandRequest) = {
-    outChannel.pipeline().addLast(new ClientHelloWsResponseHandler({
+    outChannel.pipeline().addLast(new ServerHelloWsHandler({
       val response = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
         commandRequest.dstAddrType, commandRequest.dstAddr, commandRequest.dstPort)
 
