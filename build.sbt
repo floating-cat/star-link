@@ -2,6 +2,7 @@ name := "star-link"
 ThisBuild / organization := "cl.monsoon"
 ThisBuild / version := "0.1"
 ThisBuild / scalaVersion := "2.13.2"
+val packageName = "cl.monsoon.star"
 
 lazy val root = project in file(".")
 
@@ -9,9 +10,10 @@ lazy val link = project
   .dependsOn(client, server)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](root / name, version),
-    buildInfoPackage := s"${organization.value}.star",
+    buildInfoPackage := packageName,
     libraryDependencies += "com.monovore" %% "decline" % "1.2.0",
 
+    mainClass in Compile := Some(s"$packageName.link.Star"),
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
     graalVMNativeImageOptions ++= {
       val graalPath = sourceDirectory.value / "graal"

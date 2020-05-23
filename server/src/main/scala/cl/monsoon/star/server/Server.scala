@@ -22,6 +22,7 @@ object Server {
       case Left(configReaderFailures) =>
         Console.err.println(s"Failed to parse the config file: ${config.toRealPath()}\n")
         Console.err.println(configReaderFailures.prettyPrint())
+        System.exit(1)
     }
   }
 }
