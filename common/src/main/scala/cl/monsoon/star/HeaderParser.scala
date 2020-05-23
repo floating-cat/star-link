@@ -42,7 +42,7 @@ class HeaderParser extends ByteProcessor {
       }
       return false
     }
-    size += 1;
+    size += 1
     seq.append(nextByte)
     true
   }

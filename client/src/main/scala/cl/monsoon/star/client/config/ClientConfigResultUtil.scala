@@ -20,7 +20,7 @@ object ClientConfigResultUtil {
       split.size >= 3,
       toServerInfo(split(0), split(1), split(2)),
       CannotConvert(str, "server info", "The server address, port, and password " +
-        s"need to be separated by whitespaces, " +
+        "need to be separated by whitespaces, " +
         "e.g., www.example.com 443 b32c4ce79792d991bf75f2d47cf56cbd"))
       .flatten
   }
