@@ -2,7 +2,7 @@ package cl.monsoon.star.client.config
 
 import cl.monsoon.star.config.IpAddressUtil
 import pureconfig.ConfigReader.Result
-import pureconfig.error.{CannotConvert, ConfigReaderFailure, ConfigReaderFailures, FailureReason}
+import pureconfig.error.{ConfigReaderFailure, ConfigReaderFailures, FailureReason}
 import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader, ConvertHelpers}
 
 import scala.collection.immutable.Map
@@ -50,16 +50,27 @@ object ClientConfigReader {
   def ruleReader(proxy: Proxy): ConfigReader[Rule] = {
     ConfigReader.fromCursor[Rule] { cur =>
       cur.asObjectCursor.flatMap { objCur => {
-        val proxyTags = proxy.server.keys.toList
         val finalKey = "final"
+        val proxyTags = proxy.server.keys.toList
 
-        val rulesetMap = objCur.map.removed(finalKey).map { case (key, value) =>
-          val keyResult = OutTag(key, proxyTags).left.map(CannotConvert(key, "rule tag", _))
-          (objCur.atKeyOrUndefined(key).scopeFailure(keyResult),
+        val rulesetMapEither = objCur.map.removed(finalKey).map { case (key, value) =>
+          (objCur.atKeyOrUndefined(key).scopeFailure(ClientConfigResultUtil.toRuleTag(key, proxyTags)),
             toRuleSetResult(value))
         }.pipe(sequence)
 
-        rulesetMap.map(Rule(_, DefaultProxyTag))
+        val finalNodeTagEither = objCur.atKey(finalKey) match {
+          case Left(_) => Right(DefaultProxyTag)
+          case Right(finalCur) =>
+            finalCur.asString.flatMap { finalNodeTag =>
+              finalCur.scopeFailure(ClientConfigResultUtil.toRuleTag(finalNodeTag, proxyTags))
+            }
+        }
+        (rulesetMapEither, finalNodeTagEither) match {
+          case (Right(ruleSetMap), Right(finalNodeTag)) => Right(Rule(ruleSetMap, finalNodeTag))
+          case (Left(errs), Left(errrs)) => Left(errs ++ errrs)
+          case (Left(errs), _) => Left(errs)
+          case (_, Left(errs)) => Left(errs)
+        }
       }
       }
     }

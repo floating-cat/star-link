@@ -25,6 +25,11 @@ object ClientConfigResultUtil {
       .flatten
   }
 
+  def toRuleTag(tag: String, proxyTags: List[ProxyTag]): Either[FailureReason, RuleTag] = {
+    RuleTag(tag, proxyTags)
+      .left.map(CannotConvert(tag, "rule tag", _))
+  }
+
   private def toServerInfo(address: String, port: String, password: String): Either[FailureReason, ServerInfo] =
     toHostName(address, port)
       .flatMap(hostName => {

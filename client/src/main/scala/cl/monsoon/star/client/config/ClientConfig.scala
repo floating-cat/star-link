@@ -24,21 +24,21 @@ final case class Proxy(server: Map[ProxyTag, ServerInfo], default: ProxyTag)
 
 final case class ServerInfo(hostname: HostName, password: Password)
 
-final case class Rule(outRuleSets: Map[OutTag, RuleSet], `final`: OutTag)
+final case class Rule(outRuleSets: Map[RuleTag, RuleSet], `final`: RuleTag)
 
-sealed class OutTag
+sealed class RuleTag
 
-case object DefaultProxyTag extends OutTag
+case object DefaultProxyTag extends RuleTag
 
-case object DirectTag extends OutTag
+case object DirectTag extends RuleTag
 
-case object DropTag extends OutTag
+case object DropTag extends RuleTag
 
-final case class ProxyTag private(tag: String) extends OutTag
+final case class ProxyTag private(tag: String) extends RuleTag
 
-object OutTag {
+object RuleTag {
 
-  def apply(tag: String, proxyTags: List[ProxyTag]): Either[String, OutTag] = {
+  def apply(tag: String, proxyTags: List[ProxyTag]): Either[String, RuleTag] = {
     tag match {
       case "proxy" => Right(DefaultProxyTag)
       case "direct" => Right(DirectTag)
