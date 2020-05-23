@@ -40,7 +40,7 @@ object ClientConfigResultUtil {
   private def toHostName(address: String, port: String): Either[FailureReason, HostName] = {
     Try(IpAddressUtil.toHostNameWithoutPort(address))
       .toEither
-      .left.map(err => CannotConvert(address, "host name", err.toString))
+      .left.map(err => CannotConvert(address, "host name", err.getMessage))
       .flatMap(hostName =>
         toPort(port)
           .map(p => new HostName(hostName.asAddress(), p.value))

@@ -1,14 +1,13 @@
 package cl.monsoon.star.client.config
 
-import cl.monsoon.star.config.IpAddressUtil
+import cl.monsoon.star.config.{CommonConfigResultUtil, IpAddressUtil}
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{ConfigReaderFailure, ConfigReaderFailures, FailureReason}
-import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader, ConvertHelpers}
+import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader}
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.reflect.ClassTag
 import scala.util.chaining._
 
 object ClientConfigReader {
@@ -78,9 +77,9 @@ object ClientConfigReader {
 
   private def toRuleSetResult(configCursor: ConfigCursor): Result[RuleSet] = {
     val domainSuffixResult = configCursor.fluent.at("domain-suffix").asListCursor
-      .map(cur => parseList(cur, IpAddressUtil.toDomainName))
+      .map(cur => parseList(cur, IpAddressUtil.toDomainName, "domain"))
     val ipCidrResult = configCursor.fluent.at("ip-cidr").asListCursor
-      .map(cur => parseList(cur, IpAddressUtil.toIpOrCidr))
+      .map(cur => parseList(cur, IpAddressUtil.toIpOrCidr, "IP or Cidr"))
 
     (domainSuffixResult, ipCidrResult) match {
       case (Left(_), Right(r)) => r.map(RuleSet(List.empty, _))
@@ -104,11 +103,10 @@ object ClientConfigReader {
     }.map(_.result())
       .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
 
-  private def parseList[A](configListCursor: ConfigListCursor, f: String => A)
-                          (implicit ct: ClassTag[A]): Result[List[A]] =
+  private def parseList[A](configListCursor: ConfigListCursor, f: String => A, toType: String): Result[List[A]] =
     configListCursor.list.foldLeft[Either[ListBuffer[ConfigReaderFailure], ListBuffer[A]]](Right(ListBuffer.empty)) { (hostsEither, cur) =>
       val hostEither = cur.asString.flatMap { domain =>
-        cur.scopeFailure(ConvertHelpers.catchReadError(f).apply(domain))
+        cur.scopeFailure(CommonConfigResultUtil.catchReadError0(f, toType).apply(domain))
       }
 
       (hostsEither, hostEither) match {

@@ -1,7 +1,7 @@
 package cl.monsoon.star.config
 
 import inet.ipaddr.IPAddress
-import pureconfig.{ConfigReader, ConvertHelpers}
+import pureconfig.ConfigReader
 
 object CommonConfigReader {
 
@@ -10,7 +10,7 @@ object CommonConfigReader {
 
   implicit val ipAddrReader: ConfigReader[IPAddress] =
     ConfigReader.fromString[IPAddress](
-      ConvertHelpers.catchReadError(s => IpAddressUtil.toIpAddress(s)))
+      CommonConfigResultUtil.catchReadError0(s => IpAddressUtil.toIpAddress(s), "IP"))
 
   implicit val passwordReader: ConfigReader[Password] =
     ConfigReader[String].emap(CommonConfigResultUtil.toPassword)
