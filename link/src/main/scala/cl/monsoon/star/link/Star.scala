@@ -1,6 +1,7 @@
 package cl.monsoon.star.link
 
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.Executors
 
 import cats.data.Validated
 import cats.implicits._
@@ -11,6 +12,7 @@ import cl.monsoon.star.server.Server
 import com.monovore.decline.Opts.flag
 import com.monovore.decline._
 
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.chaining._
 
 object Star extends CommandApp(
@@ -44,6 +46,14 @@ object Star extends CommandApp(
     }
   }
 )
+
+object StarTest {
+  def main(args: Array[String]): Unit = {
+    Future(Client.run(Paths.get("client.conf")))(
+      ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))
+    Server.run(Paths.get("server.conf"))
+  }
+}
 
 private object StarUtil {
 
