@@ -1,6 +1,8 @@
 package cl.monsoon.star.client.config
 
+import cl.monsoon.star.client.data.{CnDomainSuffixCollector, CnIpCidrCollector}
 import cl.monsoon.star.config.{CommonConfigResultUtil, IpAddressUtil}
+import inet.ipaddr.{HostName, IPAddressString}
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{ConfigReaderFailure, ConfigReaderFailures, FailureReason}
 import pureconfig.{ConfigCursor, ConfigReader}
@@ -76,8 +78,8 @@ object ClientConfigReader {
   }
 
   private def toRuleSetResult(configCursor: ConfigCursor): Result[RuleSet] = {
-    val domainSuffixResult = parseListAt("domain-suffix", configCursor, IpAddressUtil.toDomainName, "domain")
-    val ipCidrResult = parseListAt("ip-cidr", configCursor, IpAddressUtil.toIpOrCidr, "IP or Cidr")
+    val domainSuffixResult = parseListAt("domain-suffix", configCursor, domainOrDomainList, "domain(s)")
+    val ipCidrResult = parseListAt("ip-cidr", configCursor, ipCidrOrIpCidrList, "IP(s) or CIDR(s)")
 
     (domainSuffixResult, ipCidrResult) match {
       case (Right(r), Right(rr)) => r.flatMap(rs => rr.map(RuleSet(rs, _)))
@@ -87,7 +89,17 @@ object ClientConfigReader {
     }
   }
 
-  private def parseListAt[A](path: String, configCursor: ConfigCursor, f: String => A, toType: String): Result[Result[List[A]]] = {
+  private def domainOrDomainList(str: String): List[HostName] = {
+    if (str == "..cn") CnDomainSuffixCollector.cnSuffixList
+    else List(IpAddressUtil.toDomainName(str))
+  }
+
+  private def ipCidrOrIpCidrList(str: String): List[IPAddressString] = {
+    if (str == "..cn") CnIpCidrCollector.ipCidrList
+    else List(IpAddressUtil.toIpOrCidr(str))
+  }
+
+  private def parseListAt[A](path: String, configCursor: ConfigCursor, f: String => List[A], toType: String): Result[Result[List[A]]] = {
     configCursor.fluent.at(path).asListCursor
       .map { configListCursor =>
         configListCursor.list.foldLeft[Either[ListBuffer[ConfigReaderFailure], ListBuffer[A]]](
@@ -97,7 +109,7 @@ object ClientConfigReader {
           }
 
           (hostsEither, hostEither) match {
-            case (Right(hosts), Right(host)) => Right(hosts += host)
+            case (Right(hosts), Right(host)) => Right(hosts ++ host)
             case (Left(errs), Left(err)) => Left(concat(errs, err))
             case (Left(errs), _) => Left(errs)
             case (_, Left(err)) => Left(concat0(err))
