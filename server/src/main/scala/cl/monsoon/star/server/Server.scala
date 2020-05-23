@@ -20,7 +20,8 @@ object Server {
         BootstrapUtil.server(socketAddress, new ServerInitializer(config))
 
       case Left(configReaderFailures) =>
-        print(configReaderFailures.prettyPrint())
+        Console.err.println(s"Failed to parse the config file: ${config.toRealPath()}\n")
+        Console.err.println(configReaderFailures.prettyPrint())
     }
   }
 }
