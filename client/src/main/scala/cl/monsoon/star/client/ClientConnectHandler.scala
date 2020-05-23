@@ -1,6 +1,6 @@
 package cl.monsoon.star.client
 
-import cl.monsoon.star.client.config.{ServerInfo, StringTag}
+import cl.monsoon.star.client.config.{ServerInfo, ProxyTag}
 import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ClientHelloWsResponseHandler}
 import cl.monsoon.star._
 import io.netty.bootstrap.Bootstrap
@@ -14,7 +14,7 @@ import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
 
 @Sharable
-final class ClientConnectHandler private(stringTag: StringTag, serverInfo: ServerInfo, devMode: Boolean)
+final class ClientConnectHandler private(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean)
   extends SimpleChannelInboundHandler[SocksMessage] {
 
   override def channelRead0(inContext: ChannelHandlerContext, message: SocksMessage): Unit = {
@@ -101,8 +101,8 @@ final class ClientConnectHandler private(stringTag: StringTag, serverInfo: Serve
 
 object ClientConnectHandler {
 
-  private val pool = TrieMap[StringTag, ClientConnectHandler]()
+  private val pool = TrieMap[ProxyTag, ClientConnectHandler]()
 
-  def apply(stringTag: StringTag, serverInfo: ServerInfo, devMode: Boolean): ClientConnectHandler =
+  def apply(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ClientConnectHandler =
     pool.getOrElseUpdate(stringTag, new ClientConnectHandler(stringTag, serverInfo, devMode))
 }
