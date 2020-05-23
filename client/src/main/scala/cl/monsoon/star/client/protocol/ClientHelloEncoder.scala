@@ -3,7 +3,7 @@ package cl.monsoon.star.client.protocol
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import cl.monsoon.star.client.config.{ServerInfo, StringTag}
+import cl.monsoon.star.client.config.{ServerInfo, ProxyTag}
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
@@ -17,9 +17,9 @@ sealed abstract class ClientHelloEncoder extends MessageToByteEncoder[Socks5Comm
 
 object ClientHelloEncoder {
 
-  private val pool = TrieMap[StringTag, ClientHelloEncoder]()
+  private val pool = TrieMap[ProxyTag, ClientHelloEncoder]()
 
-  def apply(tag: StringTag, serverInfo: ServerInfo): ClientHelloEncoder =
+  def apply(tag: ProxyTag, serverInfo: ServerInfo): ClientHelloEncoder =
     pool.getOrElseUpdate(tag, new ClientHelloWSEncoder(serverInfo))
 
   @Sharable

@@ -1,16 +1,19 @@
 package cl.monsoon.star.client.config
 
-import pureconfig.ConfigReader
+import cl.monsoon.star.config.IpAddressUtil
 import pureconfig.ConfigReader.Result
-import pureconfig.error.{ConfigReaderFailures, FailureReason}
+import pureconfig.error.{CannotConvert, ConfigReaderFailures, FailureReason}
+import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader, ConvertHelpers}
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.reflect.ClassTag
 import scala.util.chaining._
 
 object ClientConfigReader {
 
-  implicit val stringTagReader: ConfigReader[StringTag] = {
+  implicit val stringTagReader: ConfigReader[ProxyTag] = {
     ConfigReader[String].emap(tag => ClientConfigResultUtil.toStringTag(tag))
   }
 
@@ -31,7 +34,7 @@ object ClientConfigReader {
         proxyMap.flatMap { map =>
           objCur.map
             .get(defaultKey)
-            .map(_.asString.map(StringTag(_).getOrElse(throw new Exception)))
+            .map(_.asString.map(ProxyTag(_).getOrElse(throw new Exception)))
             .orElse(Option.when(map.size == 1)(Right(map.head._1)))
             .getOrElse(cur.failed(NoDefaultProxyInfo))
             .flatMap {
@@ -44,9 +47,57 @@ object ClientConfigReader {
       }
     }
 
-  private def sequence[A, B](map: Map[Result[A], Result[B]]): ConfigReader.Result[Map[A, B]] =
-    map.foldLeft(Right(Map.newBuilder[A, B]): ConfigReader.Result[mutable.Builder[(A, B), Map[A, B]]]) {
-      case (Right(builder), (Right(a), Right(b))) => Right(builder.addOne(a, b))
+  def ruleReader(proxy: Proxy): ConfigReader[Rule] = {
+    ConfigReader.fromCursor[Rule] { cur =>
+      cur.asObjectCursor.flatMap { objCur => {
+        val proxyTags = proxy.server.keys.toList
+        val finalKey = "final"
+
+        val rulesetMap = objCur.map.removed(finalKey).map { case (key, value) =>
+          val keyResult = OutTag(key, proxyTags).left.map(CannotConvert(key, "rule tag", _))
+          (objCur.atKeyOrUndefined(key).scopeFailure(keyResult),
+            toRuleSetResult(value))
+        }.pipe(sequence)
+
+        rulesetMap.map(Rule(_, DefaultProxyTag))
+      }
+      }
+    }
+  }
+
+  private def toRuleSetResult(configCursor: ConfigCursor): Result[RuleSet] = {
+    val domainSuffixResult = configCursor.fluent.at("domain-suffix").asListCursor
+      .map(a => map0(a, IpAddressUtil.toDomainName))
+    val ipCidrResult = configCursor.fluent.at("ip-cidr").asListCursor
+      .map(a => map0(a, IpAddressUtil.toIpOrCidr))
+
+    (domainSuffixResult, ipCidrResult) match {
+      case (Left(_), Right(r)) => r.map(RuleSet(List.empty, _))
+      case (Right(r), Left(_)) => r.map(RuleSet(_, List.empty))
+      case (Right(r), Right(rr)) => r.flatMap(rs => rr.map(RuleSet(rs, _)))
+      case (Left(_), Left(_)) => Right(RuleSet(List.empty, List.empty))
+    }
+  }
+
+  private def map0[A](configListCursor: ConfigListCursor, f: String => A)
+                     (implicit ct: ClassTag[A]): Result[List[A]] = {
+    configListCursor.list.foldLeft[Result[ListBuffer[A]]](Right(ListBuffer.empty)) { (hostNamesEither, cur) =>
+      val hostEither = cur.asString.flatMap { domain =>
+        cur.scopeFailure(ConvertHelpers.catchReadError(f).apply(domain))
+      }
+
+      (hostNamesEither, hostEither) match {
+        case (Right(xs), Right(x)) => Right(xs.addOne(x))
+        case (Left(xs), Left(xss)) => Left(xs ++ xss)
+        case (Left(xs), _) => Left(xs)
+        case (_, Left(xs)) => Left(xs)
+      }
+    }.map(_.result())
+  }
+
+  private def sequence[A, B](map: Map[Result[A], Result[B]]): Result[Map[A, B]] =
+    map.foldLeft(Right(Map.newBuilder[A, B]): Result[mutable.Builder[(A, B), Map[A, B]]]) {
+      case (Right(builder), (Right(a), Right(b))) => Right(builder.addOne((a, b)))
       case (Left(errs), (Left(err), _)) => Left(errs ++ err)
       case (Left(errs), (_, Left(err))) => Left(errs ++ err)
       case (Left(errs), _) => Left(errs)
@@ -75,7 +126,7 @@ object ClientConfigReader {
         |}""".stripMargin
   }
 
-  final case class UnmatchedProxyDefault(defaultTag: StringTag) extends FailureReason {
+  final case class UnmatchedProxyDefault(defaultTag: ProxyTag) extends FailureReason {
     override def description: String =
       s"""No corresponding proxy node '${defaultTag.tag}' is found in the proxy object.
          |Example:

@@ -17,6 +17,16 @@ object IpAddressUtil {
     new HostName(hostname, IpAddressUtil.Parameter.HostName)
       .tap(_.validate())
 
+  @throws[HostNameException]
+  def toDomainName(domainName: String): HostName =
+    new HostName(domainName, IpAddressUtil.Parameter.DomainName)
+      .tap(_.validate())
+
+  @throws[HostNameException]
+  def toIpOrCidr(ipOrCidr: String): IPAddressString =
+    new IPAddressString(ipOrCidr, IpAddressUtil.Parameter.IpOrCidr)
+      .tap(_.validate())
+
   private object Parameter {
 
     val IpAddressString: IPAddressStringParameters =
@@ -30,7 +40,7 @@ object IpAddressUtil {
       new HostNameParameters(
         IpAddressString,
         false,
-        true,
+        false,
         true,
         true,
         true,
@@ -39,6 +49,27 @@ object IpAddressUtil {
         false,
         false
       )
+
+    val DomainName: HostNameParameters =
+      new HostNameParameters(
+        IpAddressString,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      )
+
+    val IpOrCidr: IPAddressStringParameters =
+      new IPAddressStringParameters.Builder()
+        .allowMask(false)
+        .allowPrefix(true)
+        .allowPrefixOnly(true)
+        .toParams
   }
 
 }

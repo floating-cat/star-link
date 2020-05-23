@@ -3,16 +3,12 @@ package cl.monsoon.star.client
 import java.nio.file.Path
 
 import cl.monsoon.star.BootstrapUtil
-import cl.monsoon.star.client.config.ClientConfig
-import pureconfig.ConfigSource
+import cl.monsoon.star.client.config.ClientConfigParserUtil
 
 object Client {
 
   def run(config: Path): Unit = {
-    import pureconfig.generic.auto._
-    import cl.monsoon.star.config.CommonConfigReader._
-    import cl.monsoon.star.client.config.ClientConfigReader._
-    val configEither = ConfigSource.file(config).load[ClientConfig]
+    val configEither = ClientConfigParserUtil.parse(config)
 
     configEither match {
       case Right(config) =>

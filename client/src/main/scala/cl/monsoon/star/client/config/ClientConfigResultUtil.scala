@@ -9,8 +9,8 @@ import scala.util.Try
 
 object ClientConfigResultUtil {
 
-  def toStringTag(tag: String): Either[FailureReason, StringTag] = {
-    StringTag(tag)
+  def toStringTag(tag: String): Either[FailureReason, ProxyTag] = {
+    ProxyTag(tag)
       .left.map(CannotConvert(tag, "proxy tag", _))
   }
 
