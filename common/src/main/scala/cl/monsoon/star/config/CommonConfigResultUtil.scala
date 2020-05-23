@@ -3,6 +3,7 @@ package cl.monsoon.star.config
 import pureconfig.error.{CannotConvert, FailureReason}
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 object CommonConfigResultUtil {
 
@@ -27,4 +28,10 @@ object CommonConfigResultUtil {
     def description = s"Unable to covert '$port' to a port number."
   }
 
+  def catchReadError0[T](f: String => T, toType: String): String => Either[FailureReason, T] = { string =>
+    try Right(f(string)) catch {
+      case NonFatal(ex) =>
+        Left(CannotConvert(string, toType, ex.getMessage))
+    }
+  }
 }
