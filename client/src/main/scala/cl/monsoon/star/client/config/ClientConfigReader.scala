@@ -3,7 +3,7 @@ package cl.monsoon.star.client.config
 import cl.monsoon.star.config.{CommonConfigResultUtil, IpAddressUtil}
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{ConfigReaderFailure, ConfigReaderFailures, FailureReason}
-import pureconfig.{ConfigCursor, ConfigListCursor, ConfigReader}
+import pureconfig.{ConfigCursor, ConfigReader}
 
 import scala.collection.immutable.Map
 import scala.collection.mutable
@@ -76,17 +76,35 @@ object ClientConfigReader {
   }
 
   private def toRuleSetResult(configCursor: ConfigCursor): Result[RuleSet] = {
-    val domainSuffixResult = configCursor.fluent.at("domain-suffix").asListCursor
-      .map(cur => parseList(cur, IpAddressUtil.toDomainName, "domain"))
-    val ipCidrResult = configCursor.fluent.at("ip-cidr").asListCursor
-      .map(cur => parseList(cur, IpAddressUtil.toIpOrCidr, "IP or Cidr"))
+    val domainSuffixResult = parseListAt("domain-suffix", configCursor, IpAddressUtil.toDomainName, "domain")
+    val ipCidrResult = parseListAt("ip-cidr", configCursor, IpAddressUtil.toIpOrCidr, "IP or Cidr")
 
     (domainSuffixResult, ipCidrResult) match {
+      case (Right(r), Right(rr)) => r.flatMap(rs => rr.map(RuleSet(rs, _)))
       case (Left(_), Right(r)) => r.map(RuleSet(List.empty, _))
       case (Right(r), Left(_)) => r.map(RuleSet(_, List.empty))
-      case (Right(r), Right(rr)) => r.flatMap(rs => rr.map(RuleSet(rs, _)))
       case (Left(_), Left(_)) => Right(RuleSet(List.empty, List.empty))
     }
+  }
+
+  private def parseListAt[A](path: String, configCursor: ConfigCursor, f: String => A, toType: String): Result[Result[List[A]]] = {
+    configCursor.fluent.at(path).asListCursor
+      .map { configListCursor =>
+        configListCursor.list.foldLeft[Either[ListBuffer[ConfigReaderFailure], ListBuffer[A]]](
+          Right(ListBuffer.empty)) { (hostsEither, cur) =>
+          val hostEither = cur.asString.flatMap { domain =>
+            cur.scopeFailure(CommonConfigResultUtil.catchReadError0(f, toType).apply(domain))
+          }
+
+          (hostsEither, hostEither) match {
+            case (Right(hosts), Right(host)) => Right(hosts += host)
+            case (Left(errs), Left(err)) => Left(concat(errs, err))
+            case (Left(errs), _) => Left(errs)
+            case (_, Left(err)) => Left(concat0(err))
+          }
+        }.map(_.result())
+          .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
+      }
   }
 
   private def sequence[A, B](map: Map[Result[A], Result[B]]): Result[Map[A, B]] =
@@ -100,21 +118,6 @@ object ClientConfigReader {
       case (_, (Left(err), Left(errr))) => Left(concat0(err, errr))
       case (_, (Left(err), _)) => Left(concat0(err))
       case (_, (_, Left(err))) => Left(concat0(err))
-    }.map(_.result())
-      .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
-
-  private def parseList[A](configListCursor: ConfigListCursor, f: String => A, toType: String): Result[List[A]] =
-    configListCursor.list.foldLeft[Either[ListBuffer[ConfigReaderFailure], ListBuffer[A]]](Right(ListBuffer.empty)) { (hostsEither, cur) =>
-      val hostEither = cur.asString.flatMap { domain =>
-        cur.scopeFailure(CommonConfigResultUtil.catchReadError0(f, toType).apply(domain))
-      }
-
-      (hostsEither, hostEither) match {
-        case (Right(hosts), Right(host)) => Right(hosts += host)
-        case (Left(errs), Left(err)) => Left(concat(errs, err))
-        case (Left(errs), _) => Left(errs)
-        case (_, Left(err)) => Left(concat0(err))
-      }
     }.map(_.result())
       .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
 
