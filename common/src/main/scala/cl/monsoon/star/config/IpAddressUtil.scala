@@ -22,7 +22,7 @@ object IpAddressUtil {
     new HostName(domainName, IpAddressUtil.Parameter.DomainName)
       .tap(_.validate())
 
-  @throws[HostNameException]
+  @throws[AddressStringException]
   def toIpOrCidr(ipOrCidr: String): IPAddressString =
     new IPAddressString(ipOrCidr, IpAddressUtil.Parameter.IpOrCidr)
       .tap(_.validate())
