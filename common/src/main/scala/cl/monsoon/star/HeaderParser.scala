@@ -52,6 +52,6 @@ sealed trait Cursor
 
 case object Suspension extends Cursor
 
-case class Value(v: CharSequence) extends Cursor
+final case class Value(v: CharSequence) extends Cursor
 
 case object End extends Cursor
