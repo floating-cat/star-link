@@ -24,7 +24,7 @@ final case class Proxy(server: Map[ProxyTag, ServerInfo], default: ProxyTag)
 
 final case class ServerInfo(hostname: HostName, password: Password)
 
-final case class Rule(outRuleSets: Map[RuleTag, RuleSet], `final`: RuleTag)
+final case class Rule(sets: Map[RuleTag, RuleSet], `final`: RuleTag)
 
 sealed class RuleTag
 
@@ -32,7 +32,7 @@ case object DefaultProxyTag extends RuleTag
 
 case object DirectTag extends RuleTag
 
-case object DropTag extends RuleTag
+case object RejectTag extends RuleTag
 
 final case class ProxyTag private(tag: String) extends RuleTag
 
@@ -42,10 +42,10 @@ object RuleTag {
     tag match {
       case "proxy" => Right(DefaultProxyTag)
       case "direct" => Right(DirectTag)
-      case "drop" => Right(DropTag)
+      case "reject" => Right(RejectTag)
       case s =>
         proxyTags.find(_.tag == s)
-          .toRight(s"The '$s' tag doesn't exist. This tag name need to be proxy, direct, drop or " +
+          .toRight(s"The '$s' tag doesn't exist. This tag name need to be proxy, direct, reject or " +
             "any tag name that contained in the proxy object")
     }
   }
@@ -54,9 +54,9 @@ object RuleTag {
 object ProxyTag {
 
   def apply(tag: String): Either[String, ProxyTag] = {
-    Either.cond(tag != "proxy" && tag != "direct" && tag != "drop",
+    Either.cond(tag != "proxy" && tag != "direct" && tag != "reject",
       new ProxyTag(tag),
-      "The 'proxy', 'direct' and 'drop' tag names are reserved. Please use other tag names")
+      "The 'proxy', 'direct' and 'reject' tag names are reserved. Please use other tag names")
   }
 }
 
