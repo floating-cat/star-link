@@ -26,15 +26,15 @@ final case class ServerInfo(hostname: HostName, password: Password)
 
 final case class Rule(sets: Map[RuleTag, RuleSet], `final`: RuleTag)
 
-sealed class RuleTag
+sealed trait RuleTag
+
+final case class ProxyTag private(tag: String) extends RuleTag
 
 case object DefaultProxyTag extends RuleTag
 
 case object DirectTag extends RuleTag
 
 case object RejectTag extends RuleTag
-
-final case class ProxyTag private(tag: String) extends RuleTag
 
 object RuleTag {
 
@@ -60,4 +60,4 @@ object ProxyTag {
   }
 }
 
-final case class RuleSet(domainSuffixRules: List[HostName], ipCidr: List[IPAddressString])
+final case class RuleSet(domainSuffixList: List[HostName], ipCidrs: List[IPAddressString])
