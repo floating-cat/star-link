@@ -30,7 +30,7 @@ object Router {
 
   private def getTagPriority(rule: Rule): List[RuleTag] = {
     val tags = rule.sets.keys
-    val (proxyTags, otherTags) = tags.span(_.isInstanceOf[ProxyTag])
+    val (proxyTags, otherTags) = tags.partition(_.isInstanceOf[ProxyTag])
     val defaultProxyTag = otherTags.find(_ == DefaultProxyTag)
     val directTag = otherTags.find(_ == DirectTag)
     val rejectTag = otherTags.find(_ == RejectTag)
