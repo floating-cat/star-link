@@ -17,6 +17,7 @@ object CnIpCidrCollector {
     val text = Source.fromURL("https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt")
     val ipCidrList = text.getLines()
       .filter(x => x.nonEmpty && !x.startsWith("#"))
+      .tapEach(IpAddressUtil.toIpOrCidr)
       .mkString("\n")
 
     Files.writeString(outputPath, ipCidrList)
