@@ -6,29 +6,38 @@ import inet.ipaddr.{HostName, IPAddressString}
 import io.netty.handler.codec.socksx.v5.Socks5AddressType._
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 
+import scala.util.{Failure, Success, Try}
+
 // TODO
-object Router {
+final class Router(rule: Rule) {
 
-  def decide(commandRequest: Socks5CommandRequest, rule: Rule): RouteResult = {
-    val hostname = IpAddressUtil.toHostNameWithoutPort(commandRequest.dstAddr())
+  private val priority: List[RuleTag] = getTagPriority
 
-    val addrType = commandRequest.dstAddrType()
-    val priorityList = getTagPriority(rule)
-    if (addrType == DOMAIN) {
-      `match`(priorityList, rule) { matcher =>
-        matchDomainSuffixList(hostname, matcher.domainSuffixList)
-      }
-    } else if (addrType == IPv4 || addrType == IPv6) {
-      `match`(priorityList, rule) { matcher =>
-        matchIpCidrList(hostname.asAddressString(), matcher.ipCidrs)
-      }
-    } else {
-      // TODO
-      throw new NotImplementedError()
+  private val domainSuffixMather: (HostName, RuleSet) => Boolean =
+    (hostname, ruleset) => matchDomainSuffixList(hostname, ruleset.domainSuffixList)
+  private val ipCidrMather: (IPAddressString, RuleSet) => Boolean =
+    (iPAddressString, ruleset) => matchIpCidrList(iPAddressString, ruleset.ipCidrs)
+
+  def decide(commandRequest: Socks5CommandRequest): RouteResult = {
+    Try(IpAddressUtil.toHostNameWithoutPort(commandRequest.dstAddr())) match {
+      case Success(hostName) =>
+        val addrType = commandRequest.dstAddrType()
+        if (addrType == DOMAIN) {
+          `match`(hostName)(domainSuffixMather)
+        } else if (addrType == IPv4 || addrType == IPv6) {
+          `match`(hostName.asAddressString())(ipCidrMather)
+        } else {
+          RejectRouteResult
+        }
+
+      case Failure(exception) =>
+        // TODO
+        println(exception)
+        RejectRouteResult
     }
   }
 
-  private def getTagPriority(rule: Rule): List[RuleTag] = {
+  private def getTagPriority: List[RuleTag] = {
     val tags = rule.sets.keys
     val (proxyTags, otherTags) = tags.partition(_.isInstanceOf[ProxyTag])
     val defaultProxyTag = otherTags.find(_ == DefaultProxyTag)
@@ -37,20 +46,20 @@ object Router {
     (proxyTags ++ defaultProxyTag ++ directTag ++ rejectTag).toList
   }
 
-  private def `match`(priorityList: List[RuleTag], rule: Rule)(matcher: RuleSet => Boolean): RouteResult = {
+  private def `match`[A](a: A)(matcher: (A, RuleSet) => Boolean): RouteResult = {
     @scala.annotation.tailrec
     def loop(xs: List[RuleTag]): RuleTag = {
       xs match {
         case x :: xs =>
           val ruleset = rule.sets(x)
-          if (matcher(ruleset)) x
+          if (matcher(a, ruleset)) x
           else loop(xs)
         case _ =>
           rule.`final`
       }
     }
 
-    loop(priorityList) match {
+    loop(priority) match {
       case t@ProxyTag(_) => ProxyRouteResult(t)
       case DefaultProxyTag => DefaultProxyRouteResult
       case DirectTag => DirectRouteResult
