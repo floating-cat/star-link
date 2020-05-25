@@ -17,9 +17,9 @@ object CnDomainSuffixCollector {
     val text = Source.fromURL("https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf")
     val domainSuffixLists = text.getLines()
       .filter(x => x.nonEmpty && !x.startsWith("#"))
+      .map(_.replace("server=/", "").replace("/114.114.114.114", ""))
+      .tapEach(IpAddressUtil.toDomainName)
       .mkString("\n")
-      .replace("server=/", "")
-      .replace("/114.114.114.114", "")
 
     Files.writeString(outputPath, domainSuffixLists)
   }
