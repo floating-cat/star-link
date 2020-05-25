@@ -12,6 +12,8 @@ import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 @Sharable
 final class ClientHandler(proxy: Proxy, rule: Rule, devMode: Boolean) extends SimpleChannelInboundHandler[SocksMessage] {
 
+  private val router: Router = new Router(rule)
+
   override def channelRead0(ctx: ChannelHandlerContext, socksRequest: SocksMessage): Unit = {
     socksRequest.version match {
       case SOCKS5 =>
@@ -40,7 +42,7 @@ final class ClientHandler(proxy: Proxy, rule: Rule, devMode: Boolean) extends Si
   }
 
   private def decide(commandRequest: Socks5CommandRequest): ChannelInboundHandler =
-    Router.decide(commandRequest, rule) match {
+    router.decide(commandRequest) match {
       case ProxyRouteResult(tag) => ClientConnectionHandler.proxy(tag, proxy.server(tag), devMode)
       case DefaultProxyRouteResult => ClientConnectionHandler.proxy(proxy.default, proxy.server(proxy.default), devMode)
       case DirectRouteResult => ClientConnectionHandler.direct
