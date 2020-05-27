@@ -27,6 +27,8 @@ final class Router(rule: Rule) {
         } else if (addrType == IPv4 || addrType == IPv6) {
           `match`(hostName.asAddressString())(ipCidrMather)
         } else {
+          // TODO
+          println(s"Unknown address type: ${addrType.byteValue()}.")
           RejectRouteResult
         }
 
