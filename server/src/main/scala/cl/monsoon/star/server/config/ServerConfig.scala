@@ -9,5 +9,5 @@ final case class ServerConfig(listenPort: Port = DefaultPort, listenIp: IPAddres
 
 object ServerConfig {
   val DefaultPort: Port = Port(1200).getOrElse(throw new Exception)
-  val DefaultAddress: IPAddress = IpAddressUtil.toIpAddress("127.0.0.1")
+  val DefaultAddress: IPAddress = IpAddressUtil.toIpAddress("::1")
 }
