@@ -17,7 +17,7 @@ final case class ClientConfig(listenIp: IPAddress = DefaultAddress, listenPort: 
 
 object ClientConfig {
   val DefaultSocks5Port: Port = Port(1080).getOrElse(throw new Exception)
-  val DefaultAddress: IPAddress = IpAddressUtil.toIpAddress("127.0.0.1")
+  val DefaultAddress: IPAddress = IpAddressUtil.toIpAddress("::1")
 }
 
 final case class Proxy(server: Map[ProxyTag, ServerInfo], default: ProxyTag)
