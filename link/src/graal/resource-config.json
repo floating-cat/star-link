@@ -1,15 +1,2 @@
 {
-  "resources":[
-    {"pattern":"\\QMETA-INF/native/libnetty_tcnative_linux_x86_64.so\\E"}, 
-    {"pattern":"\\QMETA-INF/native/libnetty_transport_native_epoll_x86_64.so\\E"}, 
-    {"pattern":"\\QMETA-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat\\E"}, 
-    {"pattern":"\\QMETA-INF/services/com.oracle.truffle.api.TruffleLanguage$Provider\\E"}, 
-    {"pattern":"\\QMETA-INF/services/com.oracle.truffle.api.instrumentation.TruffleInstrument$Provider\\E"}, 
-    {"pattern":"\\QMETA-INF/services/org.apache.logging.log4j.core.util.ContextDataProvider\\E"}, 
-    {"pattern":"\\QMETA-INF/services/org.apache.logging.log4j.spi.Provider\\E"}, 
-    {"pattern":"\\QMETA-INF/services/org.apache.logging.log4j.util.PropertySource\\E"}, 
-    {"pattern":"\\Qcom/oracle/truffle/nfi/impl/NFILanguageImpl.class\\E"}, 
-    {"pattern":"\\Qlog4j2.xml\\E"}
-  ],
-  "bundles":[{"name":"inet.ipaddr.IPAddressResources"}]
 }
