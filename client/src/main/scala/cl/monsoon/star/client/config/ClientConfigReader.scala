@@ -2,7 +2,7 @@ package cl.monsoon.star.client.config
 
 import cl.monsoon.star.client.data.{CnDomainSuffixCollector, CnIpCidrCollector}
 import cl.monsoon.star.config.{CommonConfigResultUtil, IpAddressUtil}
-import inet.ipaddr.{HostName, IPAddressString}
+import inet.ipaddr.{HostName, IPAddress}
 import pureconfig.ConfigReader.Result
 import pureconfig.error.{ConfigReaderFailure, ConfigReaderFailures, FailureReason}
 import pureconfig.{ConfigCursor, ConfigReader}
@@ -90,12 +90,12 @@ object ClientConfigReader {
   }
 
   private def domainOrDomainList(str: String): List[HostName] = {
-    if (str == "..cn") CnDomainSuffixCollector.cnSuffixList
+    if (str == "..cn") CnDomainSuffixCollector.cnSuffixList()
     else List(IpAddressUtil.toDomainName(str))
   }
 
-  private def ipCidrOrIpCidrList(str: String): List[IPAddressString] = {
-    if (str == "..cn") CnIpCidrCollector.ipCidrList
+  private def ipCidrOrIpCidrList(str: String): List[IPAddress] = {
+    if (str == "..cn") CnIpCidrCollector.ipCidrList()
     else List(IpAddressUtil.toIpOrCidr(str))
   }
 

@@ -23,9 +23,10 @@ object IpAddressUtil {
       .tap(_.validate())
 
   @throws[AddressStringException]
-  def toIpOrCidr(ipOrCidr: String): IPAddressString =
+  def toIpOrCidr(ipOrCidr: String): IPAddress =
     new IPAddressString(ipOrCidr, IpAddressUtil.Parameter.IpOrCidr)
       .tap(_.validate())
+      .getAddress
 
   private object Parameter {
 

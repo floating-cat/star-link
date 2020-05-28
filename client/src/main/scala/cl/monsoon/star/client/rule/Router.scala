@@ -2,33 +2,38 @@ package cl.monsoon.star.client.rule
 
 import cl.monsoon.star.client.config._
 import cl.monsoon.star.config.IpAddressUtil
-import inet.ipaddr.{HostName, IPAddressString}
+import inet.ipaddr.{HostName, IPAddress}
 import io.netty.handler.codec.socksx.v5.Socks5AddressType._
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 
 import scala.util.{Failure, Success, Try}
 
-// TODO
 final class Router(rule: Rule) {
 
-  private val priority: List[RuleTag] = getTagPriority
+  private val priority: List[RuleTag] = getTagPriority(rule)
+  // TODO in future Scala version
+  private val domainSuffixMatcher = rule.sets.view.mapValues(ruleSet =>
+    (new DomainSuffixMatcher(ruleSet.domainSuffixList), new IpCidrMatcher(ruleSet.ipCidrs)))
+    .toMap
+  private val finalNodeTag = rule.`final`
+  private type RuleMatcher = Tuple2[DomainSuffixMatcher, IpCidrMatcher]
 
-  private val domainSuffixMather: (HostName, RuleSet) => Boolean =
-    (hostname, ruleset) => matchDomainSuffixList(hostname, ruleset.domainSuffixList)
-  private val ipCidrMather: (IPAddressString, RuleSet) => Boolean =
-    (iPAddressString, ruleset) => matchIpCidrList(iPAddressString, ruleset.ipCidrs)
+  private val domainSuffixMather: (HostName, RuleMatcher) => Boolean =
+    (hostname, ruleMatcher) => ruleMatcher._1.`match`(hostname)
+  private val ipCidrMather: (IPAddress, RuleMatcher) => Boolean =
+    (iPAddress, ruleMatcher) => ruleMatcher._2.`match`(iPAddress)
 
   def decide(commandRequest: Socks5CommandRequest): RouteResult = {
     Try(IpAddressUtil.toHostNameWithoutPort(commandRequest.dstAddr())) match {
       case Success(hostName) =>
         val addrType = commandRequest.dstAddrType()
-        if (addrType == DOMAIN) {
+        if (!hostName.isAddress && addrType == DOMAIN) {
           `match`(hostName)(domainSuffixMather)
-        } else if (addrType == IPv4 || addrType == IPv6) {
-          `match`(hostName.asAddressString())(ipCidrMather)
+        } else if (hostName.isAddress && (addrType == IPv4 || addrType == IPv6)) {
+          `match`(hostName.toAddress)(ipCidrMather)
         } else {
           // TODO
-          println(s"Unknown address type: ${addrType.byteValue()}.")
+          println(s"Incorrect/Unknown address: $hostName (type: ${addrType.byteValue()}).")
           RejectRouteResult
         }
 
@@ -39,7 +44,7 @@ final class Router(rule: Rule) {
     }
   }
 
-  private def getTagPriority: List[RuleTag] = {
+  private def getTagPriority(rule: Rule): List[RuleTag] = {
     val tags = rule.sets.keys
     val (proxyTags, otherTags) = tags.partition(_.isInstanceOf[ProxyTag])
     val defaultProxyTag = otherTags.find(_ == DefaultProxyTag)
@@ -48,16 +53,16 @@ final class Router(rule: Rule) {
     (proxyTags ++ defaultProxyTag ++ directTag ++ rejectTag).toList
   }
 
-  private def `match`[A](a: A)(matcher: (A, RuleSet) => Boolean): RouteResult = {
+  private def `match`[A](a: A)(matcher: (A, RuleMatcher) => Boolean): RouteResult = {
     @scala.annotation.tailrec
     def loop(xs: List[RuleTag]): RuleTag = {
       xs match {
         case x :: xs =>
-          val ruleset = rule.sets(x)
-          if (matcher(a, ruleset)) x
+          val ruleMatcher = domainSuffixMatcher(x)
+          if (matcher(a, ruleMatcher)) x
           else loop(xs)
         case _ =>
-          rule.`final`
+          finalNodeTag
       }
     }
 
@@ -66,20 +71,6 @@ final class Router(rule: Rule) {
       case DefaultProxyTag => DefaultProxyRouteResult
       case DirectTag => DirectRouteResult
       case RejectTag => RejectRouteResult
-    }
-  }
-
-  private def matchDomainSuffixList(domain: HostName, domainSuffixList: List[HostName]): Boolean = {
-    val domainNormalized = domain.toNormalizedString
-    domainSuffixList.exists { hostName =>
-      val domainSuffixNormalized = hostName.toNormalizedString
-      domainNormalized.endsWith(s".$domainSuffixNormalized") || domainNormalized == domainSuffixNormalized
-    }
-  }
-
-  private def matchIpCidrList(ipAddress: IPAddressString, ipCidrs: List[IPAddressString]): Boolean = {
-    ipCidrs.exists { ipOrCidr =>
-      ipOrCidr.contains(ipAddress)
     }
   }
 }
