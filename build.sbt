@@ -14,6 +14,11 @@ lazy val link = project
     libraryDependencies += "com.monovore" %% "decline" % "1.2.0",
 
     mainClass in Compile := Some(s"$packageName.link.Star"),
+    discoveredMainClasses in Compile := Seq(),
+    jlinkIgnoreMissingDependency := JlinkIgnore.everything,
+    // We need access to sun.misc to see if direct buffers are available for Netty
+    jlinkModules ++= List("jdk.unsupported"),
+
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
     graalVMNativeImageOptions ++= {
       val graalPath = sourceDirectory.value / "graal"
@@ -30,6 +35,8 @@ lazy val link = project
     }
   )
   .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JlinkPlugin)
   .enablePlugins(GraalVMNativeImagePlugin)
 
 lazy val common = project
