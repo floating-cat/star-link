@@ -21,7 +21,7 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
   private var clientHelloInfo: Option[DefaultSocks5CommandRequest] = None
 
   override def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    // TODO: A micro optimization might be done here
+    // a micro optimization might be done here
     val result = headerParser.parse(in)
     result match {
       case Value(v) if first =>

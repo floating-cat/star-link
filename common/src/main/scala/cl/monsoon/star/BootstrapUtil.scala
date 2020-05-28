@@ -9,7 +9,6 @@ import io.netty.handler.logging.{LogLevel, LoggingHandler}
 object BootstrapUtil {
 
   def server(socketAddress: SocketAddress, childHandler: ChannelHandler): Unit = {
-    // TODO
     val group = NettyEngine.Default.eventLoopGroup(1)
     try {
       new ServerBootstrap()
