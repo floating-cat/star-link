@@ -10,7 +10,8 @@ import scala.util.Using
 
 object CnDomainSuffixCollector {
 
-  private val outputPath = Paths.get("data/cn_domain_suffix_list.txt")
+  // Paths#get doesn't work for jar.
+  private val outputUrl = getClass.getResource("/data/cn_domain_suffix_list.txt")
 
   def main(args: Array[String]): Unit = {
     val text = Source.fromURL("https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf")
@@ -20,11 +21,11 @@ object CnDomainSuffixCollector {
       .tapEach(IpAddressUtil.toDomainName)
       .mkString("\n")
 
-    Files.writeString(outputPath, domainSuffixLists)
+    Files.writeString(Paths.get(outputUrl.toURI), domainSuffixLists)
   }
 
   def cnSuffixList(): List[HostName] = {
-    Using.resource(Source.fromFile(outputPath.toFile)) { source =>
+    Using.resource(Source.fromURL(outputUrl)) { source =>
       source.getLines().map(IpAddressUtil.toDomainName).toList
     }
   }
