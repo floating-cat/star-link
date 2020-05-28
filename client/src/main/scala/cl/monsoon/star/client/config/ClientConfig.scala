@@ -60,4 +60,4 @@ object ProxyTag {
   }
 }
 
-final case class RuleSet(domainSuffixList: List[HostName], ipCidrs: List[IPAddressString])
+final case class RuleSet(domainSuffixList: List[HostName], ipCidrs: List[IPAddress])

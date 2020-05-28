@@ -11,7 +11,6 @@ import scala.util.Using
 object CnDomainSuffixCollector {
 
   private val outputPath = Paths.get("data/cn_domain_suffix_list.txt")
-  lazy val cnSuffixList: List[HostName] = read()
 
   def main(args: Array[String]): Unit = {
     val text = Source.fromURL("https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf")
@@ -24,8 +23,7 @@ object CnDomainSuffixCollector {
     Files.writeString(outputPath, domainSuffixLists)
   }
 
-  @throws[Exception]
-  private def read(): List[HostName] = {
+  def cnSuffixList(): List[HostName] = {
     Using.resource(Source.fromFile(outputPath.toFile)) { source =>
       source.getLines().map(IpAddressUtil.toDomainName).toList
     }

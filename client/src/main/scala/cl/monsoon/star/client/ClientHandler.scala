@@ -1,7 +1,7 @@
 package cl.monsoon.star.client
 
 import cl.monsoon.star.TimeoutUtil
-import cl.monsoon.star.client.config.{Proxy, Rule}
+import cl.monsoon.star.client.config.Proxy
 import cl.monsoon.star.client.rule._
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler, SimpleChannelInboundHandler}
@@ -10,9 +10,7 @@ import io.netty.handler.codec.socksx.SocksVersion._
 import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 
 @Sharable
-final class ClientHandler(proxy: Proxy, rule: Rule, devMode: Boolean) extends SimpleChannelInboundHandler[SocksMessage] {
-
-  private val router: Router = new Router(rule)
+final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends SimpleChannelInboundHandler[SocksMessage] {
 
   override def channelRead0(ctx: ChannelHandlerContext, socksRequest: SocksMessage): Unit = {
     socksRequest.version match {

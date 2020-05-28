@@ -4,6 +4,7 @@ import java.nio.file.Path
 
 import cl.monsoon.star.BootstrapUtil
 import cl.monsoon.star.client.config.ClientConfigParserUtil
+import cl.monsoon.star.client.rule.Router
 
 object Client {
 
@@ -13,7 +14,8 @@ object Client {
     configEither match {
       case Right(config) =>
         val socketAddress = config.toSocks5InetSocketAddress
-        val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, config.rule, config.testMode))
+        val router = new Router(config.rule)
+        val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, router, config.testMode))
         BootstrapUtil.server(socketAddress, clientInitializer)
 
       case Left(configReaderFailures) =>
