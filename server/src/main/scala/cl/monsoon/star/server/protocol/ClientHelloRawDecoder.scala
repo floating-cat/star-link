@@ -22,7 +22,7 @@ final class ClientHelloDecoder(password: Password) extends ByteToMessageDecoder 
         ctx.pipeline().addAfter(ctx.name, null, new ClientHelloInfoDecoder)
         ctx.pipeline().remove(this)
       } else {
-        ctx.close
+        ctx.close()
       }
     }
   }

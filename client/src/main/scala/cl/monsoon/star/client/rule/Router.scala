@@ -16,7 +16,7 @@ final class Router(rule: Rule) {
     (new DomainSuffixMatcher(ruleSet.domainSuffixList), new IpCidrMatcher(ruleSet.ipCidrs)))
     .toMap
   private val finalNodeTag = rule.`final`
-  private type RuleMatcher = Tuple2[DomainSuffixMatcher, IpCidrMatcher]
+  private type RuleMatcher = (DomainSuffixMatcher, IpCidrMatcher)
 
   private val domainSuffixMather: (HostName, RuleMatcher) => Boolean =
     (hostname, ruleMatcher) => ruleMatcher._1.`match`(hostname)

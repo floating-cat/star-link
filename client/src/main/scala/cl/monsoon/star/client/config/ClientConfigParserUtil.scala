@@ -8,22 +8,25 @@ import inet.ipaddr.IPAddress
 import pureconfig.ConfigReader.Result
 import pureconfig.{ConfigReader, ConfigSource}
 
+import scala.annotation.unused
+
 object ClientConfigParserUtil {
 
-  private  case class ProxyWrapper(proxy: Proxy)
+  private case class ProxyWrapper(proxy: Proxy)
 
   private case class ClientConfigWithoutProxy(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
-                                            rule: Rule, testMode: Boolean = false)
+                                              rule: Rule, testMode: Boolean = false)
 
   def parse(config: Path): Result[ClientConfig] = {
     import pureconfig.generic.auto._
-    import cl.monsoon.star.config.CommonConfigReader._
     import cl.monsoon.star.client.config.ClientConfigReader._
     val configObjectSource = ConfigSource.file(config)
     val proxyWrapperEither = configObjectSource.load[ProxyWrapper]
 
     proxyWrapperEither.flatMap { proxyWrapper =>
-      implicit val ruleReader: ConfigReader[Rule] = ClientConfigReader.ruleReader(proxyWrapper.proxy)
+      // incorrect unused warning from Scalac
+      @unused implicit val ruleReader: ConfigReader[Rule] = ClientConfigReader.ruleReader(proxyWrapper.proxy)
+      import cl.monsoon.star.config.CommonConfigReader._
 
       val configWithoutProxyEither = configObjectSource.load[ClientConfigWithoutProxy]
       configWithoutProxyEither.map(c =>

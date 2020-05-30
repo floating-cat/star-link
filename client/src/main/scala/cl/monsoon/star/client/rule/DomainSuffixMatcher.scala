@@ -11,7 +11,8 @@ final class DomainSuffixMatcher(domainSuffixList: List[HostName]) {
 
   def `match`(domain: HostName): Boolean = {
     @scala.annotation.tailrec
-    def loop(remainDomainSegments: Seq[String], remainDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): Boolean = {
+    def loop(remainDomainSegments: collection.Seq[String],
+             remainDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): Boolean = {
       remainDomainSegments match {
         case Seq(x, xs@_*) =>
           remainDomainSuffixMap.get(x.intern()) match {
@@ -29,7 +30,8 @@ final class DomainSuffixMatcher(domainSuffixList: List[HostName]) {
 
   private def toMap(domainSuffixList: List[HostName]): util.IdentityHashMap[String, DomainSegment] = {
     @scala.annotation.tailrec
-    def loop(remainDomainSuffixList: Seq[String], nextDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): DomainSegment = {
+    def loop(remainDomainSuffixList: collection.Seq[String],
+             nextDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): DomainSegment = {
       remainDomainSuffixList match {
         case x +: xs =>
           val nextSegment = nextDomainSuffixMap.putIfAbsent(x.intern(),
