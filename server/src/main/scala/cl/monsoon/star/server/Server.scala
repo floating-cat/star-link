@@ -9,10 +9,11 @@ import pureconfig.ConfigSource
 
 object Server {
 
-  def run(config: Path): Unit = {
+  def run(configPath: Path): Unit = {
     import pureconfig.generic.auto._
     import cl.monsoon.star.config.CommonConfigReader._
-    val configEither = ConfigSource.file(config).load[ServerConfig]
+    val configAbsolutePath = configPath.toAbsolutePath
+    val configEither = ConfigSource.file(configAbsolutePath).load[ServerConfig]
 
     configEither match {
       case Right(config) =>
@@ -20,7 +21,7 @@ object Server {
         BootstrapUtil.server(socketAddress, new ServerInitializer(config))
 
       case Left(configReaderFailures) =>
-        Console.err.println(s"Failed to parse the config file: ${config.toRealPath()}\n")
+        Console.err.println(s"Failed to parse the config file: $configAbsolutePath\n")
         Console.err.println(configReaderFailures.prettyPrint())
         System.exit(1)
     }
