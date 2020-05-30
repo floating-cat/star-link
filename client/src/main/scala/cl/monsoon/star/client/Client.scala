@@ -8,8 +8,12 @@ import cl.monsoon.star.client.rule.Router
 
 object Client {
 
-  def run(config: Path): Unit = {
-    val configEither = ClientConfigParserUtil.parse(config)
+  def run(configPath: Path): Unit = {
+    // We need to use toAbsolutePath here in order to let the HOCON file
+    // resolve the relative include files correctly
+    // TODO check whether this is a bug in the HOCON project
+    val configAbsolutePath = configPath.toAbsolutePath
+    val configEither = ClientConfigParserUtil.parse(configAbsolutePath)
 
     configEither match {
       case Right(config) =>
@@ -19,7 +23,7 @@ object Client {
         BootstrapUtil.server(socketAddress, clientInitializer)
 
       case Left(configReaderFailures) =>
-        Console.err.println(s"Failed to parse the config file: ${config.toRealPath()}\n")
+        Console.err.println(s"Failed to parse the config file: $configAbsolutePath\n")
         Console.err.println(configReaderFailures.prettyPrint())
         System.exit(1)
     }
