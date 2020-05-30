@@ -3,7 +3,7 @@ package cl.monsoon.star.client.protocol
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import cl.monsoon.star.client.config.{ServerInfo, ProxyTag}
+import cl.monsoon.star.client.config.{ProxyTag, ServerInfo}
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
@@ -11,6 +11,7 @@ import io.netty.handler.codec.MessageToByteEncoder
 import io.netty.handler.codec.socksx.v5.Socks5AddressType.{DOMAIN, IPv4, IPv6}
 import io.netty.handler.codec.socksx.v5.{Socks5AddressEncoder, Socks5CommandRequest}
 
+import scala.annotation.unused
 import scala.collection.concurrent.TrieMap
 
 sealed abstract class ClientHelloEncoder extends MessageToByteEncoder[Socks5CommandRequest]
@@ -22,6 +23,7 @@ object ClientHelloEncoder {
   def apply(tag: ProxyTag, serverInfo: ServerInfo): ClientHelloEncoder =
     pool.getOrElseUpdate(tag, new ClientHelloWSEncoder(serverInfo))
 
+  @unused
   @Sharable
   private final class ClientHelloRawEncoder(serverInfo: ServerInfo) extends ClientHelloEncoder {
 
@@ -34,6 +36,7 @@ object ClientHelloEncoder {
 
   @Sharable
   private final class ClientHelloWSEncoder(serverInfo: ServerInfo) extends ClientHelloEncoder {
+
     private val requestBytesPrefix: Array[Byte] =
       (s"GET /${Base64.getEncoder.encodeToString(serverInfo.password.value)} HTTP/1.1\r\n" +
         s"Host:${serverInfo.hostname.getHost}\r\n" +
@@ -68,9 +71,9 @@ object ClientHelloEncoder {
   }
 
   private def writeCommand(msg: Socks5CommandRequest, out: ByteBuf): Unit = {
-    out.writeByte(msg.`type`.byteValue)
+    out.writeByte(msg.`type`.byteValue.toInt)
     val dstAddrType = msg.dstAddrType
-    out.writeByte(dstAddrType.byteValue)
+    out.writeByte(dstAddrType.byteValue.toInt)
     Socks5AddressEncoder.DEFAULT.encodeAddress(dstAddrType, msg.dstAddr, out)
     out.writeShort(msg.dstPort)
   }

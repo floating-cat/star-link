@@ -3,8 +3,6 @@ package cl.monsoon.star
 import io.netty.buffer.Unpooled
 import io.netty.channel.{Channel, ChannelFutureListener}
 
-import scala.language.implicitConversions
-
 object ChannelUtil {
 
   def closeOnFlush(ch: Channel): Unit =

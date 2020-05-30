@@ -41,14 +41,17 @@ lazy val link = project
 
 lazy val common = project
   .settings(
-    libraryDependencies ++= commonDependencies
+    libraryDependencies ++= commonDependencies,
   )
+  .settings(valueDiscardSetting)
 
 lazy val client = project
   .dependsOn(common)
+  .settings(valueDiscardSetting)
 
 lazy val server = project
   .dependsOn(common)
+  .settings(valueDiscardSetting)
 
 val nettyVersion = "4.1.50.Final"
 lazy val commonDependencies = Seq(
@@ -66,3 +69,6 @@ lazy val commonDependencies = Seq(
   "org.apache.logging.log4j" % "log4j-api" % "2.13.3",
   "org.apache.logging.log4j" % "log4j-core" % "2.13.3",
 )
+
+lazy val valueDiscardSetting =
+  Seq(scalacOptions ~= (_.filterNot(Set("-Wvalue-discard"))))

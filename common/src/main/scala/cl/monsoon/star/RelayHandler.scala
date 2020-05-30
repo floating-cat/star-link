@@ -3,7 +3,9 @@ package cl.monsoon.star
 import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
 import io.netty.util.ReferenceCountUtil
 
-final class RelayHandler(relayChannel: Channel, tag: RelayTag.Value) extends ChannelInboundHandlerAdapter {
+import scala.annotation.unused
+
+final class RelayHandler(relayChannel: Channel, @unused tag: RelayTag.Value) extends ChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit =
     if (relayChannel.isActive)
@@ -23,7 +25,7 @@ final class RelayHandler(relayChannel: Channel, tag: RelayTag.Value) extends Cha
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     // TODO
     cause.printStackTrace()
-    ctx.close
+    ctx.close()
   }
 }
 

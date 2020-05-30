@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 
 import cl.monsoon.star.client.config.ClientConfig.{DefaultAddress, DefaultSocks5Port}
 import cl.monsoon.star.config.{IpAddressUtil, Password, Port}
-import inet.ipaddr.{HostName, IPAddress, IPAddressString}
+import inet.ipaddr.{HostName, IPAddress}
 
 import scala.collection.immutable.Map
 
