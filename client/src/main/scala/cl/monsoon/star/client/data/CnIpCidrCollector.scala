@@ -10,7 +10,7 @@ import scala.util.Using
 
 object CnIpCidrCollector {
 
-  private val outputUrl = ClassLoader.getSystemResource("/data/cn_ip_cidr_list.txt")
+  private val outputUrl = getClass.getResource("/data/cn_ip_cidr_list.txt")
 
   def main(args: Array[String]): Unit = {
     val text = Source.fromURL("https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt")
