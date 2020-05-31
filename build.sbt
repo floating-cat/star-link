@@ -2,7 +2,7 @@ name := "star-link"
 ThisBuild / organization := "cl.monsoon"
 ThisBuild / version := "0.1"
 ThisBuild / scalaVersion := "2.13.2"
-val packageName = "cl.monsoon.star"
+val projectPackageName = "cl.monsoon.star"
 
 lazy val root = project in file(".")
 
@@ -10,10 +10,10 @@ lazy val link = project
   .dependsOn(client, server)
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](root / name, version),
-    buildInfoPackage := packageName,
+    buildInfoPackage := projectPackageName,
     libraryDependencies += "com.monovore" %% "decline" % "1.2.0",
 
-    mainClass in Compile := Some(s"$packageName.link.Star"),
+    mainClass in Compile := Some(s"$projectPackageName.link.Star"),
     discoveredMainClasses in Compile := Seq(),
     jlinkIgnoreMissingDependency := JlinkIgnore.everything,
     // We need access to sun.misc to see if direct buffers are available for Netty
@@ -33,12 +33,19 @@ lazy val link = project
         s"-H:ReflectionConfigurationFiles=" + graalPath / "reflect-config.json",
         s"-H:ResourceConfigurationFiles=" + graalPath / "resource-config.json",
       )
-    }
+    },
+    packageName in Docker := "star-link",
+    dockerUsername := Some("aasterism"),
+    dockerUpdateLatest := true,
+    dockerEntrypoint := Seq("/opt/docker/bin/link", "-s", "/etc/star-link/server.conf",
+      "-J-Xmx20m", "-J-XX:MaxDirectMemorySize=20m"),
+    dockerExposedVolumes := Seq("/opt/docker/logs")
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(JlinkPlugin)
   .enablePlugins(GraalVMNativeImagePlugin)
+  .enablePlugins(DockerPlugin)
 
 lazy val common = project
   .settings(
