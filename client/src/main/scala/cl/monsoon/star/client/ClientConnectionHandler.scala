@@ -100,7 +100,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
   override def onConnected(commandRequest: Socks5CommandRequest,
                            inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
     outChannel.pipeline().addLast(
-      SslUtil.handler(outChannel, devMode),
+      SslUtil.handler(outChannel, serverInfo, devMode),
       ClientHelloEncoder(stringTag, serverInfo))
 
     outChannel.writeAndFlush(commandRequest)

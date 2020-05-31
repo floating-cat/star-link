@@ -1,5 +1,6 @@
 package cl.monsoon.star.client
 
+import cl.monsoon.star.client.config.ServerInfo
 import io.netty.channel.Channel
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import io.netty.handler.ssl.{SslContextBuilder, SslHandler, SslProvider}
@@ -8,7 +9,7 @@ import scala.util.chaining._
 
 object SslUtil {
 
-  def handler(ch: Channel, trustInsecure: Boolean): SslHandler = {
+  def handler(ch: Channel, serverInfo: ServerInfo, trustInsecure: Boolean): SslHandler = {
     val sslEngine = SslContextBuilder.forClient()
       .sslProvider(SslProvider.OPENSSL_REFCNT)
       .pipe { builder =>
@@ -19,7 +20,7 @@ object SslUtil {
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
         }
       }.build()
-      .newEngine(ch.alloc())
+      .newEngine(ch.alloc(), serverInfo.hostname.getHost, serverInfo.hostname.getPort)
 
     new SslHandler(sslEngine)
   }
