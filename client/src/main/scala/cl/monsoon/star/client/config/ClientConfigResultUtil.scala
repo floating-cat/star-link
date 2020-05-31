@@ -1,5 +1,7 @@
 package cl.monsoon.star.client.config
 
+import java.net.InetSocketAddress
+
 import cl.monsoon.star.config.CommonConfigResultUtil.{toPassword, toPort}
 import cl.monsoon.star.config.IpAddressUtil
 import inet.ipaddr.HostName
@@ -43,7 +45,7 @@ object ClientConfigResultUtil {
       .left.map(err => CannotConvert(address, "host name", err.getMessage))
       .flatMap(hostName =>
         toPort(port)
-          .map(p => new HostName(hostName.asAddress(), p.value))
+          .map(p => new HostName(new InetSocketAddress(hostName.getHost, p.value)))
       )
   }
 }
