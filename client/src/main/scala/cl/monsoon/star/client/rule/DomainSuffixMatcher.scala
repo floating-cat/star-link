@@ -14,14 +14,14 @@ final class DomainSuffixMatcher(domainSuffixList: List[HostName]) {
     def loop(remainDomainSegments: collection.Seq[String],
              remainDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): Boolean = {
       remainDomainSegments match {
-        case Seq(x, xs@_*) =>
+        case collection.Seq(x, xs@_*) =>
           remainDomainSuffixMap.get(x.intern()) match {
             case NextSegment(map) => loop(xs, map)
             case EndSegment => true
             case _ => false
           }
         case _ =>
-          true
+          false
       }
     }
 
@@ -34,8 +34,8 @@ final class DomainSuffixMatcher(domainSuffixList: List[HostName]) {
              nextDomainSuffixMap: util.IdentityHashMap[String, DomainSegment]): DomainSegment = {
       remainDomainSuffixList match {
         case x +: xs =>
-          val nextSegment = nextDomainSuffixMap.putIfAbsent(x.intern(),
-            NextSegment(new util.IdentityHashMap[String, DomainSegment]()))
+          val nextSegment = nextDomainSuffixMap.computeIfAbsent(x.intern(),
+            _ => NextSegment(new util.IdentityHashMap[String, DomainSegment]()))
           nextSegment match {
             case NextSegment(map) =>
               loop(xs, map)
