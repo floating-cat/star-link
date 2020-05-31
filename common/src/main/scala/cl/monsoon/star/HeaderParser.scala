@@ -6,7 +6,8 @@ import io.netty.util.ByteProcessor
 import io.netty.util.internal.AppendableCharSequence
 
 /**
- * Forked from [[io.netty.handler.codec.http.HttpObjectDecoder.HeaderParser]].
+ * See https://stackoverflow.com/q/57591379
+ * Forked from [[https://github.com/netty/netty/blob/0fb58d3c542231d2e95a16a4182d46e7ebc293d1/codec-http/src/main/java/io/netty/handler/codec/http/HttpObjectDecoder.java#L859]]
  */
 class HeaderParser extends ByteProcessor {
 
