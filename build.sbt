@@ -18,6 +18,7 @@ lazy val link = project
     jlinkIgnoreMissingDependency := JlinkIgnore.everything,
     // We need access to sun.misc to see if direct buffers are available for Netty
     jlinkModules ++= List("jdk.unsupported"),
+    bashScriptConfigLocation := Some("${app_home}/../conf/application.ini"),
 
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
     graalVMNativeImageOptions ++= {
