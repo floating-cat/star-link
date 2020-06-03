@@ -12,12 +12,13 @@ object SslUtil {
   def handler(ch: Channel, serverInfo: ServerInfo, trustInsecure: Boolean): SslHandler = {
     val sslEngine = SslContextBuilder.forClient()
       .sslProvider(SslProvider.OPENSSL_REFCNT)
+      // TODO
+      .protocols("TLSv1.2", "TLSv1.3")
       .pipe { builder =>
         if (!trustInsecure) {
-          builder.protocols("TLSv1.3")
+          builder
         } else {
-          builder.protocols("TLSv1.3", "TLSv1.2")
-            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+          builder.trustManager(InsecureTrustManagerFactory.INSTANCE)
         }
       }.build()
       .newEngine(ch.alloc(), serverInfo.hostname.getHost, serverInfo.hostname.getPort)
