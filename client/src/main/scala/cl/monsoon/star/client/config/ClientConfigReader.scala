@@ -1,6 +1,6 @@
 package cl.monsoon.star.client.config
 
-import cl.monsoon.star.client.data.{CnDomainSuffixCollector, CnIpCidrCollector}
+import cl.monsoon.star.client.data.{CnDomainSuffixCollector, CnIpCidrCollector, PrivateIpCidrCollector}
 import cl.monsoon.star.config.{CommonConfigResultUtil, IpAddressUtil}
 import inet.ipaddr.{HostName, IPAddress}
 import pureconfig.ConfigReader.Result
@@ -96,6 +96,7 @@ object ClientConfigReader {
 
   private def ipCidrOrIpCidrList(str: String): List[IPAddress] = {
     if (str == "..cn") CnIpCidrCollector.ipCidrList()
+    else if (str == "..private") PrivateIpCidrCollector.privateIpCidrList()
     else List(IpAddressUtil.toIpOrCidr(str))
   }
 
