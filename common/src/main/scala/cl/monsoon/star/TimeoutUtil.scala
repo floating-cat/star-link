@@ -8,14 +8,14 @@ import io.netty.handler.timeout.{IdleStateEvent, IdleStateHandler}
 object TimeoutUtil {
 
   val ConnectTimeoutMillis: Int = 10000
-  private val IdleStateEventHandler: IdleStateEventHandler = new IdleStateEventHandler
+  private val idleStateEventHandler: ChannelDuplexHandler = IdleStateEventHandler
 
   def addTimeoutHandlers(pipe: ChannelPipeline): ChannelPipeline =
     pipe.addLast(new IdleStateHandler(10, 10, 0))
-      .addLast("IdleStateEventHandler", IdleStateEventHandler)
+      .addLast("IdleStateEventHandler", idleStateEventHandler)
 
   def removeTimeoutHandlers(pipe: ChannelPipeline): ChannelPipeline = {
-    pipe.remove(IdleStateEventHandler)
+    pipe.remove(idleStateEventHandler)
       .remove(classOf[IdleStateHandler])
     pipe
   }
@@ -26,7 +26,7 @@ object TimeoutUtil {
 }
 
 @Sharable
-private class IdleStateEventHandler extends ChannelDuplexHandler {
+private object IdleStateEventHandler extends ChannelDuplexHandler {
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
     evt match {
