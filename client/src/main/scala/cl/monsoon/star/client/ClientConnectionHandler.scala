@@ -117,7 +117,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
 }
 
 @Sharable
-private final class ClientConnectionDirectHandler extends ClientConnectionHandler {
+private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 
   override def serverSocketAddress(commandRequest: Socks5CommandRequest): SocketAddress =
     new InetSocketAddress(commandRequest.dstAddr, commandRequest.dstPort)
@@ -129,7 +129,7 @@ private final class ClientConnectionDirectHandler extends ClientConnectionHandle
 }
 
 @Sharable
-private final class ClientConnectionRejectHandler extends SimpleChannelInboundHandler[SocksMessage] {
+private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler[SocksMessage] {
 
   override def channelRead0(inContext: ChannelHandlerContext, message: SocksMessage): Unit = {
     message match {
@@ -151,8 +151,8 @@ private final class ClientConnectionRejectHandler extends SimpleChannelInboundHa
 object ClientConnectionHandler {
 
   private val proxyHandlerInstancePool = TrieMap[ProxyTag, ClientConnectionHandler]()
-  val direct: ChannelInboundHandler = new ClientConnectionDirectHandler
-  val reject: ChannelInboundHandler = new ClientConnectionRejectHandler
+  val direct: ChannelInboundHandler = ClientConnectionDirectHandler
+  val reject: ChannelInboundHandler = ClientConnectionRejectHandler
 
   def proxy(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ChannelInboundHandler =
     proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientConnectionProxyHandler(stringTag, serverInfo, devMode))
