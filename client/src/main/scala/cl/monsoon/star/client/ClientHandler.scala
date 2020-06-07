@@ -20,7 +20,7 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
     msg match {
       case _: Socks5InitialRequest =>
         ctx.pipeline().remove(classOf[Socks5InitialRequestDecoder])
-        TimeoutUtil.insertDecoder(ctx.pipeline(), new Socks5CommandRequestDecoder)
+        TimeoutUtil.addAfterIt(ctx.pipeline(), new Socks5CommandRequestDecoder)
         ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
 
       case commandRequest: Socks5CommandRequest =>
@@ -53,9 +53,4 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
       case DirectRouteResult => ClientConnectionHandler.direct
       case RejectRouteResult => ClientConnectionHandler.reject
     }
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause.printStackTrace()
-    ctx.close()
-  }
 }

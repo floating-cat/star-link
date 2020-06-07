@@ -21,12 +21,6 @@ final class RelayHandler(relayChannel: Channel, @unused tag: RelayTag.Value) ext
 
   override def channelInactive(ctx: ChannelHandlerContext): Unit =
     ChannelUtil.closeOnFlush(relayChannel)
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    // TODO
-    cause.printStackTrace()
-    ctx.close()
-  }
 }
 
 object RelayTag extends Enumeration {

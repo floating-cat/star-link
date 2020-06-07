@@ -69,7 +69,7 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
   private def relayAndRemoveUnneededHandlers(httpOrSocks5: HttpOrSocks5,
                                              inContext: ChannelHandlerContext, outChannel: Channel) = {
     inContext.pipeline
-      .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
+      .pipe(ExceptionHandler.addBeforeIt(_, new RelayHandler(outChannel, RelayTag.ClientReceiver)))
       .remove(this)
       .pipe(TimeoutUtil.removeTimeoutHandlers)
       .tap {
@@ -82,6 +82,7 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
       }
     outChannel.pipeline()
       .addLast(new RelayHandler(inContext.channel, RelayTag.ClientSender))
+      .pipe(ExceptionHandler.add)
   }
 
   final protected def sendFailureResponse(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext): Unit = {
@@ -91,11 +92,6 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
 
     inContext.channel().writeAndFlush(response)
     ChannelUtil.closeOnFlush(inContext.channel)
-  }
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause.printStackTrace()
-    ctx.close()
   }
 }
 
@@ -147,11 +143,6 @@ private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler
 
     inContext.channel.writeAndFlush(response)
     ChannelUtil.closeOnFlush(inContext.channel)
-  }
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause.printStackTrace()
-    ctx.close()
   }
 }
 
