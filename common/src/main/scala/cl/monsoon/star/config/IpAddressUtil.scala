@@ -23,6 +23,11 @@ object IpAddressUtil {
       .tap(_.validate())
 
   @throws[HostNameException]
+  def toHostNameWithPortOption(hostname: String): HostName =
+    new HostName(hostname, IpAddressUtil.Parameter.HostNameWithPortOption)
+      .tap(_.validate())
+
+  @throws[HostNameException]
   def toDomainName(domainName: String): HostName =
     new HostName(domainName, IpAddressUtil.Parameter.DomainName)
       .tap(_.validate())
@@ -66,6 +71,20 @@ object IpAddressUtil {
         true,
         true,
         false,
+        false,
+        false
+      )
+
+    val HostNameWithPortOption: HostNameParameters =
+      new HostNameParameters(
+        IpAddressString,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
         false,
         false
       )

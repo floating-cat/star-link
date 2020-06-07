@@ -9,8 +9,8 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 @Sharable
 final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends ChannelInboundHandlerAdapter {
 
+  private val socks4ProtocolFirstByte: Byte = 4
   private val socks5ProtocolFirstByte: Byte = 5
-  private val httpConnectProtocolFirstByte: Byte = 'C'.toByte
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     val buf = msg.asInstanceOf[ByteBuf]
@@ -24,14 +24,16 @@ final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends Cha
           // assume SOCKS5
           ctxPipe.addLast(new SocksPortUnificationServerHandler)
 
-        case `httpConnectProtocolFirstByte` =>
-          // assume HTTP CONNECT
-          ctxPipe.addLast(new HttpServerCodec())
-
-        case _ =>
+        case `socks4ProtocolFirstByte` =>
+          // assume SOCKS4
+          // we don't support SOCKS4
           buf.release()
           ctx.close()
           return
+
+        case _ =>
+          // assume HTTP Proxy
+          ctxPipe.addLast(new HttpServerCodec())
       }
     }
 

@@ -9,7 +9,7 @@ import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ServerHelloWsHandler
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
-import io.netty.handler.codec.http.{DefaultHttpResponse, HttpResponseStatus, HttpServerCodec}
+import io.netty.handler.codec.http.{DefaultHttpResponse, HttpRequestEncoder, HttpResponseStatus, HttpServerCodec}
 import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandStatus, Socks5ServerEncoder}
 import io.netty.util.concurrent.Future
 
@@ -21,24 +21,24 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
 
   final override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
     val promise = inContext.executor.newPromise[Channel]
+    val inChannel = inContext.channel
     promise.addListener((future: Future[Channel]) => {
       if (future.isSuccess) {
-        onConnected(httpOrSocks5, inContext, future.getNow)
+        onConnected(httpOrSocks5, inChannel, future.getNow)
       } else {
-        sendFailureResponse(httpOrSocks5, inContext)
+        sendFailureResponse(httpOrSocks5, inChannel)
       }
     })
 
-    val inboundChannel = inContext.channel
     new Bootstrap()
-      .group(inboundChannel.eventLoop)
+      .group(inChannel.eventLoop)
       .channel(NettyEngine.Default.socketChannelClass)
       .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
       .handler(new DirectClientHandler(promise))
       .connect(serverSocketAddress(httpOrSocks5))
       .addListener((future: ChannelFuture) => {
         if (!future.isSuccess) {
-          sendFailureResponse(httpOrSocks5, inContext)
+          sendFailureResponse(httpOrSocks5, inChannel)
         }
       })
   }
@@ -46,52 +46,74 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
   def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress
 
   def onConnected(httpOrSocks5: HttpOrSocks5,
-                  inContext: ChannelHandlerContext, outChannel: Channel): Unit
+                  inChannel: Channel, outChannel: Channel): Unit
 
   final protected def sendSuccessResponseAndStartRelay(httpOrSocks5: HttpOrSocks5,
-                                                       inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
-    val response = httpOrSocks5.fold(
-      http => new DefaultHttpResponse(http.version, HttpResponseStatus.OK),
-      socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
-        socks5.dstAddrType, socks5.dstAddr, socks5.dstPort))
+                                                       inChannel: Channel, outChannel: Channel): Unit = {
+    val (response, responseOutputChannel) = httpOrSocks5 match {
+      case Right(socks5) =>
+        (new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
+          socks5.dstAddrType, socks5.dstAddr, socks5.dstPort),
+          inChannel)
 
-    inContext.channel.writeAndFlush(response)
+      case Left(http) if http.isHttpConnect =>
+        (new DefaultHttpResponse(http.httpRequest.protocolVersion(), HttpResponseStatus.OK),
+          inChannel)
+
+      case Left(http) =>
+        outChannel.pipeline()
+          .pipe(ExceptionHandler.addBeforeIt(_, new HttpRequestEncoder()))
+        (http.httpRequest, outChannel)
+    }
+
+    writeResponseAndRelay(httpOrSocks5, response, responseOutputChannel, inChannel, outChannel)
+  }
+
+  private def writeResponseAndRelay(httpOrSocks5: HttpOrSocks5, response: Any,
+                                    responseOutputChannel: Channel,
+                                    inChannel: Channel, outChannel: Channel) = {
+    responseOutputChannel.writeAndFlush(response)
       .addListener((responseFuture: ChannelFuture) => {
         if (responseFuture.isSuccess) {
-          relayAndRemoveUnneededHandlers(httpOrSocks5, inContext, outChannel)
+          relayAndRemoveUnneededHandlers(httpOrSocks5, inChannel, outChannel)
         } else {
-          ChannelUtil.closeOnFlush(inContext.channel)
+          ChannelUtil.closeOnFlush(inChannel)
           ChannelUtil.closeOnFlush(outChannel)
         }
       })
   }
 
   private def relayAndRemoveUnneededHandlers(httpOrSocks5: HttpOrSocks5,
-                                             inContext: ChannelHandlerContext, outChannel: Channel) = {
-    inContext.pipeline
+                                             inChannel: Channel, outChannel: Channel) = {
+    val inPipe = inChannel.pipeline
+    inPipe
       .pipe(ExceptionHandler.addBeforeIt(_, new RelayHandler(outChannel, RelayTag.ClientReceiver)))
       .remove(this)
       .pipe(TimeoutUtil.removeTimeoutHandlers)
-      .tap {
-        ctxPipe =>
-          if (httpOrSocks5.isLeft) {
-            ctxPipe.remove(classOf[HttpServerCodec])
-          } else {
-            ctxPipe.remove(classOf[Socks5ServerEncoder])
-          }
-      }
+
     outChannel.pipeline()
-      .addLast(new RelayHandler(inContext.channel, RelayTag.ClientSender))
-      .pipe(ExceptionHandler.add)
+      .addLast(new RelayHandler(inChannel, RelayTag.ClientSender))
+
+    httpOrSocks5 match {
+      case Right(_) =>
+        inPipe.remove(classOf[Socks5ServerEncoder])
+
+      case Left(http) =>
+        inPipe.remove(classOf[HttpServerCodec])
+
+        if (!http.isHttpConnect) {
+          outChannel.pipeline().remove(classOf[HttpRequestEncoder])
+        }
+    }
   }
 
-  final protected def sendFailureResponse(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext): Unit = {
+  final protected def sendFailureResponse(httpOrSocks5: HttpOrSocks5, inChannel: Channel): Unit = {
     val response = httpOrSocks5.fold(
-      http => new DefaultHttpResponse(http.version, HttpResponseStatus.INTERNAL_SERVER_ERROR),
+      http => new DefaultHttpResponse(http.httpRequest.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR),
       socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, socks5.dstAddrType))
 
-    inContext.channel().writeAndFlush(response)
-    ChannelUtil.closeOnFlush(inContext.channel)
+    inChannel.writeAndFlush(response)
+    ChannelUtil.closeOnFlush(inChannel)
   }
 }
 
@@ -102,18 +124,19 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
   override def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress =
     serverInfo.hostname.asInetSocketAddress()
 
-  override def onConnected(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
+  override def onConnected(httpOrSocks5: HttpOrSocks5, inChannel: Channel, outChannel: Channel): Unit = {
     outChannel.pipeline().addLast(
       SslUtil.handler(outChannel, serverInfo, devMode),
       ClientHelloEncoder(stringTag, serverInfo))
+      .pipe(ExceptionHandler.add)
 
     outChannel.writeAndFlush(httpOrSocks5)
       .addListener((requestFuture: ChannelFuture) => {
         if (requestFuture.isSuccess) {
           outChannel.pipeline().addLast(new ServerHelloWsHandler(
-            sendSuccessResponseAndStartRelay(httpOrSocks5, inContext, outChannel)))
+            sendSuccessResponseAndStartRelay(httpOrSocks5, inChannel, outChannel)))
         } else {
-          sendFailureResponse(httpOrSocks5, inContext)
+          sendFailureResponse(httpOrSocks5, inChannel)
           ChannelUtil.closeOnFlush(outChannel)
         }
       })
@@ -128,8 +151,8 @@ private object ClientConnectionDirectHandler extends ClientConnectionHandler {
       _.hostName.asInetSocketAddress(),
       socks5 => new InetSocketAddress(socks5.dstAddr, socks5.dstPort))
 
-  override def onConnected(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
-    sendSuccessResponseAndStartRelay(httpOrSocks5, inContext, outChannel)
+  override def onConnected(httpOrSocks5: HttpOrSocks5, inChannel: Channel, outChannel: Channel): Unit = {
+    sendSuccessResponseAndStartRelay(httpOrSocks5, inChannel, outChannel)
   }
 }
 
@@ -138,7 +161,7 @@ private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler
 
   override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
     val response = httpOrSocks5.fold(
-      http => new DefaultHttpResponse(http.version, HttpResponseStatus.FORBIDDEN),
+      http => new DefaultHttpResponse(http.httpRequest.protocolVersion(), HttpResponseStatus.FORBIDDEN),
       socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FORBIDDEN, socks5.dstAddrType))
 
     inContext.channel.writeAndFlush(response)
