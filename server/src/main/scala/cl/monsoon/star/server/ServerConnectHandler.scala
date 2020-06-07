@@ -31,8 +31,8 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
             .pipe(ExceptionHandler.add)
             .writeAndFlush(buffer)
         } else {
-          ChannelUtil.closeOnFlush(inContext.channel)
           buffer.release()
+          ChannelUtil.closeOnFlush(inContext.channel)
         }
       })
 
@@ -43,8 +43,8 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
         .handler(new DirectClientHandler(promise))
         .connect(request.dstAddr, request.dstPort).addListener((future: ChannelFuture) => {
         if (!future.isSuccess) {
-          ChannelUtil.closeOnFlush(inContext.channel)
           buffer.release()
+          ChannelUtil.closeOnFlush(inContext.channel)
         }
       })
     } else {
