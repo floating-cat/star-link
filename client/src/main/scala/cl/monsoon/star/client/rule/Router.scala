@@ -3,7 +3,6 @@ package cl.monsoon.star.client.rule
 import cl.monsoon.star.client.config._
 import cl.monsoon.star.config.IpAddressUtil
 import inet.ipaddr.{HostName, IPAddress}
-import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 
 import scala.util.{Failure, Success, Try}
 
@@ -22,8 +21,8 @@ final class Router(rule: Rule) {
   private val ipCidrMather: (IPAddress, RuleMatcher) => Boolean =
     (iPAddress, ruleMatcher) => ruleMatcher._2.`match`(iPAddress)
 
-  def decide(commandRequest: Socks5CommandRequest): RouteResult = {
-    Try(IpAddressUtil.toHostNameWithoutPort(commandRequest.dstAddr())) match {
+  def decide(address: String): RouteResult = {
+    Try(IpAddressUtil.toHostNameWithoutPort(address)) match {
       case Success(hostName) =>
         if (hostName.isAddress) {
           `match`(hostName.toAddress)(ipCidrMather)

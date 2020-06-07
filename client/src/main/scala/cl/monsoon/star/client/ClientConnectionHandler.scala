@@ -1,66 +1,64 @@
 package cl.monsoon.star.client
 
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.InetSocketAddress
 
 import cl.monsoon.star._
 import cl.monsoon.star.client.config.{ProxyTag, ServerInfo}
+import cl.monsoon.star.client.protocol.CommandRequest.HttpOrSocks5
 import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ServerHelloWsHandler}
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
-import io.netty.handler.codec.socksx.SocksMessage
-import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandRequest, Socks5CommandStatus, Socks5ServerEncoder}
+import io.netty.handler.codec.http.{DefaultHttpResponse, HttpResponseStatus, HttpServerCodec}
+import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandStatus, Socks5ServerEncoder}
 import io.netty.util.concurrent.Future
 
 import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
 
 @Sharable
-private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler[SocksMessage] {
+private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler[HttpOrSocks5] {
 
-  override def channelRead0(inContext: ChannelHandlerContext, message: SocksMessage): Unit = {
-    message match {
-      case commandRequest: Socks5CommandRequest =>
-        val promise = inContext.executor.newPromise[Channel]
-        promise.addListener((future: Future[Channel]) => {
-          if (future.isSuccess) {
-            onConnected(commandRequest, inContext, future.getNow)
-          } else {
-            sendFailureResponse(inContext, commandRequest)
-          }
-        })
+  final override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
+    val promise = inContext.executor.newPromise[Channel]
+    promise.addListener((future: Future[Channel]) => {
+      if (future.isSuccess) {
+        onConnected(httpOrSocks5, inContext, future.getNow)
+      } else {
+        sendFailureResponse(httpOrSocks5, inContext)
+      }
+    })
 
-        val inboundChannel = inContext.channel
-        new Bootstrap()
-          .group(inboundChannel.eventLoop)
-          .channel(NettyEngine.Default.socketChannelClass)
-          .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
-          .handler(new DirectClientHandler(promise))
-          .connect(serverSocketAddress(commandRequest))
-          .addListener((future: ChannelFuture) => {
-            if (!future.isSuccess) {
-              sendFailureResponse(inContext, commandRequest)
-            }
-          })
-
-      case _ => inContext.close
-    }
+    val inboundChannel = inContext.channel
+    new Bootstrap()
+      .group(inboundChannel.eventLoop)
+      .channel(NettyEngine.Default.socketChannelClass)
+      .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
+      .handler(new DirectClientHandler(promise))
+      .connect(serverSocketAddress(httpOrSocks5))
+      .addListener((future: ChannelFuture) => {
+        if (!future.isSuccess) {
+          sendFailureResponse(httpOrSocks5, inContext)
+        }
+      })
   }
 
-  def serverSocketAddress(commandRequest: Socks5CommandRequest): SocketAddress
+  def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress
 
-  def onConnected(commandRequest: Socks5CommandRequest,
+  def onConnected(httpOrSocks5: HttpOrSocks5,
                   inContext: ChannelHandlerContext, outChannel: Channel): Unit
 
-  final protected def sendSuccessResponseAndStartRelay(commandRequest: Socks5CommandRequest,
+  final protected def sendSuccessResponseAndStartRelay(httpOrSocks5: HttpOrSocks5,
                                                        inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
-    val response = new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
-      commandRequest.dstAddrType, commandRequest.dstAddr, commandRequest.dstPort)
+    val response = httpOrSocks5.fold(
+      http => new DefaultHttpResponse(http.version, HttpResponseStatus.OK),
+      socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.SUCCESS,
+        socks5.dstAddrType, socks5.dstAddr, socks5.dstPort))
 
     inContext.channel.writeAndFlush(response)
       .addListener((responseFuture: ChannelFuture) => {
         if (responseFuture.isSuccess) {
-          relayAndRemoveUnneededHandlers(inContext, outChannel)
+          relayAndRemoveUnneededHandlers(httpOrSocks5, inContext, outChannel)
         } else {
           ChannelUtil.closeOnFlush(inContext.channel)
           ChannelUtil.closeOnFlush(outChannel)
@@ -68,19 +66,30 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
       })
   }
 
-  private def relayAndRemoveUnneededHandlers(inContext: ChannelHandlerContext, outChannel: Channel) = {
+  private def relayAndRemoveUnneededHandlers(httpOrSocks5: HttpOrSocks5,
+                                             inContext: ChannelHandlerContext, outChannel: Channel) = {
     inContext.pipeline
       .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
       .remove(this)
       .pipe(TimeoutUtil.removeTimeoutHandlers)
-      .remove(classOf[Socks5ServerEncoder])
+      .tap {
+        ctxPipe =>
+          if (httpOrSocks5.isLeft) {
+            ctxPipe.remove(classOf[HttpServerCodec])
+          } else {
+            ctxPipe.remove(classOf[Socks5ServerEncoder])
+          }
+      }
     outChannel.pipeline()
       .addLast(new RelayHandler(inContext.channel, RelayTag.ClientSender))
   }
 
-  final protected def sendFailureResponse(inContext: ChannelHandlerContext, commandRequest: Socks5CommandRequest): Unit = {
-    inContext.channel().writeAndFlush(new DefaultSocks5CommandResponse(
-      Socks5CommandStatus.FAILURE, commandRequest.dstAddrType))
+  final protected def sendFailureResponse(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext): Unit = {
+    val response = httpOrSocks5.fold(
+      http => new DefaultHttpResponse(http.version, HttpResponseStatus.INTERNAL_SERVER_ERROR),
+      socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, socks5.dstAddrType))
+
+    inContext.channel().writeAndFlush(response)
     ChannelUtil.closeOnFlush(inContext.channel)
   }
 
@@ -94,22 +103,21 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
 private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo: ServerInfo,
                                                  devMode: Boolean) extends ClientConnectionHandler {
 
-  override def serverSocketAddress(commandRequest: Socks5CommandRequest): SocketAddress =
+  override def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress =
     serverInfo.hostname.asInetSocketAddress()
 
-  override def onConnected(commandRequest: Socks5CommandRequest,
-                           inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
+  override def onConnected(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
     outChannel.pipeline().addLast(
       SslUtil.handler(outChannel, serverInfo, devMode),
       ClientHelloEncoder(stringTag, serverInfo))
 
-    outChannel.writeAndFlush(commandRequest)
+    outChannel.writeAndFlush(httpOrSocks5)
       .addListener((requestFuture: ChannelFuture) => {
         if (requestFuture.isSuccess) {
           outChannel.pipeline().addLast(new ServerHelloWsHandler(
-            sendSuccessResponseAndStartRelay(commandRequest, inContext, outChannel)))
+            sendSuccessResponseAndStartRelay(httpOrSocks5, inContext, outChannel)))
         } else {
-          sendFailureResponse(inContext, commandRequest)
+          sendFailureResponse(httpOrSocks5, inContext)
           ChannelUtil.closeOnFlush(outChannel)
         }
       })
@@ -119,27 +127,26 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
 @Sharable
 private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 
-  override def serverSocketAddress(commandRequest: Socks5CommandRequest): SocketAddress =
-    new InetSocketAddress(commandRequest.dstAddr, commandRequest.dstPort)
+  override def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress =
+    httpOrSocks5.fold(
+      _.hostName.asInetSocketAddress(),
+      socks5 => new InetSocketAddress(socks5.dstAddr, socks5.dstPort))
 
-  override def onConnected(commandRequest: Socks5CommandRequest,
-                           inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
-    sendSuccessResponseAndStartRelay(commandRequest, inContext, outChannel)
+  override def onConnected(httpOrSocks5: HttpOrSocks5, inContext: ChannelHandlerContext, outChannel: Channel): Unit = {
+    sendSuccessResponseAndStartRelay(httpOrSocks5, inContext, outChannel)
   }
 }
 
 @Sharable
-private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler[SocksMessage] {
+private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler[HttpOrSocks5] {
 
-  override def channelRead0(inContext: ChannelHandlerContext, message: SocksMessage): Unit = {
-    message match {
-      case commandRequest: Socks5CommandRequest =>
-        inContext.channel().writeAndFlush(new DefaultSocks5CommandResponse(
-          Socks5CommandStatus.FORBIDDEN, commandRequest.dstAddrType))
-        ChannelUtil.closeOnFlush(inContext.channel)
+  override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
+    val response = httpOrSocks5.fold(
+      http => new DefaultHttpResponse(http.version, HttpResponseStatus.FORBIDDEN),
+      socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FORBIDDEN, socks5.dstAddrType))
 
-      case _ => inContext.close
-    }
+    inContext.channel.writeAndFlush(response)
+    ChannelUtil.closeOnFlush(inContext.channel)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {

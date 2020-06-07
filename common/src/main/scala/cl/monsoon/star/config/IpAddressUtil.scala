@@ -13,8 +13,13 @@ object IpAddressUtil {
       .getAddress
 
   @throws[HostNameException]
+  def toHostNameWithPort(hostname: String): HostName =
+    new HostName(hostname, IpAddressUtil.Parameter.HostNameWithPort)
+      .tap(_.validate())
+
+  @throws[HostNameException]
   def toHostNameWithoutPort(hostname: String): HostName =
-    new HostName(hostname, IpAddressUtil.Parameter.HostName)
+    new HostName(hostname, IpAddressUtil.Parameter.HostNameWithoutPort)
       .tap(_.validate())
 
   @throws[HostNameException]
@@ -37,7 +42,21 @@ object IpAddressUtil {
         .allowPrefixOnly(false)
         .toParams
 
-    val HostName: HostNameParameters =
+    val HostNameWithPort: HostNameParameters =
+      new HostNameParameters(
+        IpAddressString,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false
+      )
+
+    val HostNameWithoutPort: HostNameParameters =
       new HostNameParameters(
         IpAddressString,
         false,
