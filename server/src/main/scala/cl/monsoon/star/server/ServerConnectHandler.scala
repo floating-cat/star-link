@@ -7,6 +7,8 @@ import io.netty.channel._
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.util.concurrent.Future
 
+import scala.util.chaining._
+
 final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
 
   private var receivedClientHello = false
@@ -22,10 +24,11 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
         val outChannel = future.getNow
         if (future.isSuccess) {
           inContext.pipeline()
-            .addLast(new RelayHandler(outChannel, RelayTag.ServerReceiver))
+            .pipe(ExceptionHandler.addBeforeIt(_, new RelayHandler(outChannel, RelayTag.ServerReceiver)))
             .remove(this)
           outChannel.pipeline()
             .addLast(new RelayHandler(inContext.channel, RelayTag.ServerSender))
+            .pipe(ExceptionHandler.add)
             .writeAndFlush(buffer)
         } else {
           ChannelUtil.closeOnFlush(inContext.channel)
@@ -47,10 +50,5 @@ final class ServerConnectHandler extends ChannelInboundHandlerAdapter {
     } else {
       buffer = Unpooled.wrappedBuffer(buffer, msg.asInstanceOf[ByteBuf])
     }
-  }
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause.printStackTrace()
-    ctx.close()
   }
 }

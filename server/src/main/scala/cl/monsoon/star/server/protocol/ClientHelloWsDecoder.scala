@@ -47,11 +47,6 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
         ctx.close()
     }
   }
-
-  override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
-    cause.printStackTrace()
-    ctx.close()
-  }
 }
 
 object ClientHelloWsDecoder {

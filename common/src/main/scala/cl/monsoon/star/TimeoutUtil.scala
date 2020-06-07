@@ -21,7 +21,7 @@ object TimeoutUtil {
   }
 
   // https://github.com/netty/netty/issues/6842
-  def insertDecoder(pipe: ChannelPipeline, decoder: ByteToMessageDecoder): ChannelPipeline =
+  def addAfterIt(pipe: ChannelPipeline, decoder: ByteToMessageDecoder): ChannelPipeline =
     pipe.addAfter("IdleStateEventHandler", null, decoder)
 }
 
