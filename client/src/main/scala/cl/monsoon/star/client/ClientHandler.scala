@@ -1,22 +1,24 @@
 package cl.monsoon.star.client
 
+import java.net.InetSocketAddress
+
 import cl.monsoon.star.TimeoutUtil
 import cl.monsoon.star.client.config.Proxy
-import cl.monsoon.star.client.protocol.CommandRequest.HttpsRequest
+import cl.monsoon.star.client.protocol.CommandRequest.HttpProxyRequest
 import cl.monsoon.star.client.rule._
 import cl.monsoon.star.config.IpAddressUtil
+import inet.ipaddr.HostName
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler, ChannelInboundHandlerAdapter}
-import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.{HttpMethod, HttpRequest}
 import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 @Sharable
 final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends ChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
-    val ctxPipe = ctx.pipeline()
     msg match {
       case _: Socks5InitialRequest =>
         ctx.pipeline().remove(classOf[Socks5InitialRequestDecoder])
@@ -24,6 +26,7 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
         ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
 
       case commandRequest: Socks5CommandRequest =>
+        val ctxPipe = ctx.pipeline()
         ctxPipe.remove(classOf[Socks5CommandRequestDecoder])
         // TODO
         if (commandRequest.`type` == Socks5CommandType.CONNECT) {
@@ -33,13 +36,17 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
         } else ctx.close
 
       case httpRequest: HttpRequest =>
-        Try(IpAddressUtil.toHostNameWithPort(httpRequest.uri())) match {
-          case Success(hostname) =>
-            ctxPipe.addLast(decide(hostname.getHost))
-            ctx.fireChannelRead(Left(HttpsRequest(hostname, httpRequest.protocolVersion())))
-            ctxPipe.remove(this)
-
-          case _ => ctx.close
+        if (httpRequest.method() == HttpMethod.CONNECT) {
+          val hostNameTry = Try(IpAddressUtil.toHostNameWithPort(httpRequest.uri()))
+          handleHttpsRequest(httpRequest, hostNameTry, ctx, isHttpConnect = true)
+        } else {
+          val hostNameTry = Try(IpAddressUtil.toHostNameWithPortOption(httpRequest.headers().get("host")))
+            .map(hostName =>
+              if (hostName.getPort == null)
+                new HostName(new InetSocketAddress(hostName.getHost, 80))
+              else
+                hostName)
+          handleHttpsRequest(httpRequest, hostNameTry, ctx, isHttpConnect = false)
         }
 
       case _ => ctx.close
@@ -53,4 +60,19 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
       case DirectRouteResult => ClientConnectionHandler.direct
       case RejectRouteResult => ClientConnectionHandler.reject
     }
+
+  private def handleHttpsRequest(httpRequest: HttpRequest, hostNameTry: Try[HostName],
+                                 ctx: ChannelHandlerContext, isHttpConnect: Boolean): Unit = {
+    hostNameTry match {
+      case Success(hostname) =>
+        ctx.pipeline().addLast(decide(hostname.getHost))
+        ctx.fireChannelRead(Left(HttpProxyRequest(httpRequest, hostname, isHttpConnect)))
+        ctx.pipeline().remove(this)
+
+      case Failure(exception) =>
+        // TODO
+        exception.printStackTrace()
+        ctx.close
+    }
+  }
 }

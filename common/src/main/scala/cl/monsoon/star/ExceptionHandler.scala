@@ -1,7 +1,7 @@
 package cl.monsoon.star
 
 import io.netty.channel.ChannelHandler.Sharable
-import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler, ChannelInboundHandlerAdapter, ChannelPipeline}
+import io.netty.channel.{ChannelHandler, ChannelHandlerContext, ChannelInboundHandlerAdapter, ChannelPipeline}
 
 @Sharable
 object ExceptionHandler extends ChannelInboundHandlerAdapter {
@@ -14,6 +14,6 @@ object ExceptionHandler extends ChannelInboundHandlerAdapter {
   def add(pipe: ChannelPipeline): ChannelPipeline =
     pipe.addLast("ExceptionHandler", this)
 
-  def addBeforeIt(pipe: ChannelPipeline, inboundHandler: ChannelInboundHandler): ChannelPipeline =
-    pipe.addBefore("ExceptionHandler", null, inboundHandler)
+  def addBeforeIt(pipe: ChannelPipeline, channelHandler: ChannelHandler): ChannelPipeline =
+    pipe.addBefore("ExceptionHandler", null, channelHandler)
 }
