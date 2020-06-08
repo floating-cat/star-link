@@ -17,7 +17,7 @@ import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
 
 @Sharable
-private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler[HttpOrSocks5] {
+private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHandler[HttpOrSocks5] {
 
   final override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
     val promise = inContext.executor.newPromise[Channel]
@@ -62,7 +62,7 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
 
       case Left(http) =>
         outChannel.pipeline()
-          .pipe(ExceptionHandler.addBeforeIt(_, new HttpRequestEncoder()))
+          .addLast(new HttpRequestEncoder())
         (http.httpRequest, outChannel)
     }
 
@@ -87,7 +87,7 @@ private sealed trait ClientConnectionHandler extends SimpleChannelInboundHandler
                                              inChannel: Channel, outChannel: Channel) = {
     val inPipe = inChannel.pipeline
     inPipe
-      .pipe(ExceptionHandler.addBeforeIt(_, new RelayHandler(outChannel, RelayTag.ClientReceiver)))
+      .addLast(new RelayHandler(outChannel, RelayTag.ClientReceiver))
       .remove(this)
       .pipe(TimeoutUtil.removeTimeoutHandlers)
 
@@ -128,13 +128,13 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
     outChannel.pipeline().addLast(
       SslUtil.handler(outChannel, serverInfo, devMode),
       ClientHelloEncoder(stringTag, serverInfo))
-      .pipe(ExceptionHandler.add)
 
     outChannel.writeAndFlush(httpOrSocks5)
       .addListener((requestFuture: ChannelFuture) => {
         if (requestFuture.isSuccess) {
-          outChannel.pipeline().addLast(new ServerHelloWsHandler(
-            sendSuccessResponseAndStartRelay(httpOrSocks5, inChannel, outChannel)))
+          outChannel.pipeline()
+            .addLast(new ServerHelloWsHandler(
+              sendSuccessResponseAndStartRelay(httpOrSocks5, inChannel, outChannel)))
         } else {
           sendFailureResponse(httpOrSocks5, inChannel)
           ChannelUtil.closeOnFlush(outChannel)
@@ -157,7 +157,7 @@ private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 }
 
 @Sharable
-private object ClientConnectionRejectHandler extends SimpleChannelInboundHandler[HttpOrSocks5] {
+private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHandler[HttpOrSocks5] {
 
   override def channelRead0(inContext: ChannelHandlerContext, httpOrSocks5: HttpOrSocks5): Unit = {
     val response = httpOrSocks5.fold(

@@ -1,10 +1,10 @@
 package cl.monsoon.star.client.protocol
 
-import cl.monsoon.star.{End, HeaderParser, Suspension}
+import cl.monsoon.star.{BaseChannelInboundHandlerAdapter, End, HeaderParser, Suspension}
 import io.netty.buffer.ByteBuf
-import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.channel.ChannelHandlerContext
 
-final class ServerHelloWsHandler(firstEndAction: => Unit) extends ChannelInboundHandlerAdapter {
+final class ServerHelloWsHandler(firstEndAction: => Unit) extends BaseChannelInboundHandlerAdapter {
 
   private val headerParser = new HeaderParser()
 

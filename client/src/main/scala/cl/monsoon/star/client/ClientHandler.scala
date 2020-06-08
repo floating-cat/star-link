@@ -2,21 +2,21 @@ package cl.monsoon.star.client
 
 import java.net.InetSocketAddress
 
-import cl.monsoon.star.TimeoutUtil
 import cl.monsoon.star.client.config.Proxy
 import cl.monsoon.star.client.protocol.CommandRequest.HttpProxyRequest
 import cl.monsoon.star.client.rule._
 import cl.monsoon.star.config.IpAddressUtil
+import cl.monsoon.star.{BaseChannelInboundHandlerAdapter, TimeoutUtil}
 import inet.ipaddr.HostName
 import io.netty.channel.ChannelHandler.Sharable
-import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler, ChannelInboundHandlerAdapter}
+import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler}
 import io.netty.handler.codec.http.{HttpMethod, HttpRequest}
 import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 
 import scala.util.{Failure, Success, Try}
 
 @Sharable
-final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends ChannelInboundHandlerAdapter {
+final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends BaseChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     msg match {

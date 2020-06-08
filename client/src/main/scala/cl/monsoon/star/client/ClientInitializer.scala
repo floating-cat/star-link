@@ -1,6 +1,6 @@
 package cl.monsoon.star.client
 
-import cl.monsoon.star.{ExceptionHandler, TimeoutUtil}
+import cl.monsoon.star.TimeoutUtil
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{Channel, ChannelInitializer}
 
@@ -15,6 +15,5 @@ final class ClientInitializer(clientHandler: ClientHandler) extends ChannelIniti
     ch.pipeline()
       .pipe(TimeoutUtil.addTimeoutHandlers)
       .addLast(httpOrSocks5InboundHandler)
-      .pipe(ExceptionHandler.add)
   }
 }

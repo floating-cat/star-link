@@ -1,11 +1,11 @@
 package cl.monsoon.star
 
-import io.netty.channel.{Channel, ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.channel.{Channel, ChannelHandlerContext}
 import io.netty.util.ReferenceCountUtil
 
 import scala.annotation.unused
 
-final class RelayHandler(relayChannel: Channel, @unused tag: RelayTag.Value) extends ChannelInboundHandlerAdapter {
+final class RelayHandler(relayChannel: Channel, @unused tag: RelayTag.Value) extends BaseChannelInboundHandlerAdapter {
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit =
     if (relayChannel.isActive)
