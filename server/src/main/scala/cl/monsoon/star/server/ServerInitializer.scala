@@ -1,8 +1,8 @@
 package cl.monsoon.star.server
 
+import cl.monsoon.star.TimeoutUtil
 import cl.monsoon.star.server.config.ServerConfig
 import cl.monsoon.star.server.protocol.ClientHelloWsDecoder
-import cl.monsoon.star.{ExceptionHandler, TimeoutUtil}
 import io.netty.channel.{Channel, ChannelInitializer}
 
 import scala.util.chaining._
@@ -24,6 +24,5 @@ final class ServerInitializer(config: ServerConfig) extends ChannelInitializer[C
       }
       .addLast(new ClientHelloWsDecoder(config.password),
         new ServerConnectHandler)
-      .pipe(ExceptionHandler.add)
   }
 }

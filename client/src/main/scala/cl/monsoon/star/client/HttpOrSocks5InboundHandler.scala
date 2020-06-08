@@ -1,13 +1,14 @@
 package cl.monsoon.star.client
 
+import cl.monsoon.star.BaseChannelInboundHandlerAdapter
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
-import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
+import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 
 @Sharable
-final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends ChannelInboundHandlerAdapter {
+final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends BaseChannelInboundHandlerAdapter {
 
   private val socks4ProtocolFirstByte: Byte = 4
   private val socks5ProtocolFirstByte: Byte = 5
