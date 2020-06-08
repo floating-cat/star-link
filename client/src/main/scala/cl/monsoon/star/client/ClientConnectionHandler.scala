@@ -43,10 +43,10 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
       })
   }
 
-  def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress
+  protected def serverSocketAddress(httpOrSocks5: HttpOrSocks5): InetSocketAddress
 
-  def onConnected(httpOrSocks5: HttpOrSocks5,
-                  inChannel: Channel, outChannel: Channel): Unit
+  protected def onConnected(httpOrSocks5: HttpOrSocks5,
+                            inChannel: Channel, outChannel: Channel): Unit
 
   final protected def sendSuccessResponseAndStartRelay(httpOrSocks5: HttpOrSocks5,
                                                        inChannel: Channel, outChannel: Channel): Unit = {
