@@ -112,7 +112,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
       http => new DefaultHttpResponse(http.httpRequest.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR),
       socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FAILURE, socks5.dstAddrType))
 
-    inChannel.writeAndFlush(response)
+    inChannel.writeAndFlush(response, inChannel.voidPromise())
     ChannelUtil.closeOnFlush(inChannel)
   }
 }
@@ -164,7 +164,7 @@ private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHan
       http => new DefaultHttpResponse(http.httpRequest.protocolVersion(), HttpResponseStatus.FORBIDDEN),
       socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FORBIDDEN, socks5.dstAddrType))
 
-    inContext.channel.writeAndFlush(response)
+    inContext.channel.writeAndFlush(response, inContext.voidPromise())
     ChannelUtil.closeOnFlush(inContext.channel)
   }
 }

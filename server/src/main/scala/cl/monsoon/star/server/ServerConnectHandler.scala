@@ -26,7 +26,7 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
             .remove(this)
           outChannel.pipeline()
             .addLast(new RelayHandler(inContext.channel, RelayTag.ServerSender))
-            .writeAndFlush(buffer)
+            .writeAndFlush(buffer, outChannel.voidPromise())
         } else {
           buffer.release()
           ChannelUtil.closeOnFlush(inContext.channel)
