@@ -38,7 +38,7 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
 
       case End if !first && clientHelloInfo.nonEmpty =>
         wsResponse.retain()
-        ctx.writeAndFlush(wsResponse.duplicate())
+        ctx.writeAndFlush(wsResponse.duplicate(), ctx.voidPromise())
         out.add(clientHelloInfo.get)
 
         ctx.pipeline().remove(this)

@@ -23,7 +23,7 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
       case _: Socks5InitialRequest =>
         ctx.pipeline().remove(classOf[Socks5InitialRequestDecoder])
         TimeoutUtil.addAfterIt(ctx.pipeline(), new Socks5CommandRequestDecoder)
-        ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH))
+        ctx.writeAndFlush(new DefaultSocks5InitialResponse(Socks5AuthMethod.NO_AUTH), ctx.voidPromise())
 
       case commandRequest: Socks5CommandRequest =>
         val ctxPipe = ctx.pipeline()
