@@ -21,14 +21,13 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
   private var clientHelloInfo: Option[DefaultSocks5CommandRequest] = None
 
   override def decode(ctx: ChannelHandlerContext, in: ByteBuf, out: util.List[AnyRef]): Unit = {
-    // a micro optimization might be done here
     val result = headerParser.parse(in)
     result match {
       case Value(v) if first =>
         first = false
-        val pass = passwordRegex.findFirstMatchIn(v)
+        val pw = passwordRegex.findFirstMatchIn(v)
           .filter(m => Base64.getDecoder.decode(m.group(1)).sameElements(password.value))
-        if (pass.isEmpty) ctx.close()
+        if (pw.isEmpty) ctx.close()
 
       case Value(clientHelloInfoRegex(v)) =>
         val buf = Unpooled.wrappedBuffer(Base64.getDecoder.decode(v))
@@ -50,6 +49,8 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
 }
 
 object ClientHelloWsDecoder {
+  // we don't support lenient parsing here
+  // see https://tools.ietf.org/html/rfc7230#section-3.5
   private val passwordRegex: Regex = "GET /([^ ]*) ".r
   private val clientHelloInfoRegex: Regex = "X-A:[ ]*([^ ]*)[ ]*".r
 
