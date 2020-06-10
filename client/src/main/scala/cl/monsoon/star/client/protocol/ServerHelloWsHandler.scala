@@ -13,7 +13,6 @@ final class ServerHelloWsHandler(firstEndAction: => Unit) extends BaseChannelInb
 
     @scala.annotation.tailrec
     def loop(): Unit = {
-      // a micro optimization might be done here
       val result = headerParser.parse(buf)
       result match {
         case End =>
