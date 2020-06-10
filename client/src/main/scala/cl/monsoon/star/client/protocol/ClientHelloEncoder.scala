@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 import cl.monsoon.star.client.config.{ProxyTag, ServerInfo}
-import cl.monsoon.star.client.protocol.CommandRequest.HttpOrSocks5
+import cl.monsoon.star.client.protocol.CommandRequest.HttpProxyOrSocks5
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
@@ -15,7 +15,7 @@ import io.netty.handler.codec.socksx.v5._
 import scala.annotation.unused
 import scala.collection.concurrent.TrieMap
 
-sealed abstract class ClientHelloEncoder extends MessageToByteEncoder[HttpOrSocks5]
+sealed abstract class ClientHelloEncoder extends MessageToByteEncoder[HttpProxyOrSocks5]
 
 object ClientHelloEncoder {
 
@@ -28,7 +28,7 @@ object ClientHelloEncoder {
   @Sharable
   private final class ClientHelloRawEncoder(serverInfo: ServerInfo) extends ClientHelloEncoder {
 
-    override def encode(ctx: ChannelHandlerContext, msg: HttpOrSocks5, out: ByteBuf): Unit = {
+    override def encode(ctx: ChannelHandlerContext, msg: HttpProxyOrSocks5, out: ByteBuf): Unit = {
       out.writeBytes(serverInfo.password.value)
       writeCommand(toSocks5CommandRequest(msg), out)
       ctx.pipeline().remove(this)
@@ -48,7 +48,7 @@ object ClientHelloEncoder {
     private val requestBytesSuffix =
       "\r\n\r\n".getBytes(StandardCharsets.US_ASCII)
 
-    override def encode(ctx: ChannelHandlerContext, msg: HttpOrSocks5, out: ByteBuf): Unit = {
+    override def encode(ctx: ChannelHandlerContext, msg: HttpProxyOrSocks5, out: ByteBuf): Unit = {
       val commandRequest = toSocks5CommandRequest(msg)
       val buf = ctx.alloc().heapBuffer(length(commandRequest))
       writeCommand(commandRequest, buf)
@@ -80,7 +80,7 @@ object ClientHelloEncoder {
     out.writeShort(msg.dstPort)
   }
 
-  private def toSocks5CommandRequest(httpOrSocks5: HttpOrSocks5): Socks5CommandRequest = {
+  private def toSocks5CommandRequest(httpOrSocks5: HttpProxyOrSocks5): Socks5CommandRequest = {
     httpOrSocks5.fold(
       http => new DefaultSocks5CommandRequest(Socks5CommandType.CONNECT, Socks5AddressType.DOMAIN,
         http.hostName.getHost, http.hostName.getPort),

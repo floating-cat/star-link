@@ -1,12 +1,22 @@
 package cl.monsoon.star.client.protocol
 
 import inet.ipaddr.HostName
-import io.netty.handler.codec.http.HttpRequest
+import io.netty.buffer.ByteBuf
+import io.netty.handler.codec.http.HttpVersion
 import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 
 object CommandRequest {
 
-  final case class HttpProxyRequest(httpRequest: HttpRequest, hostName: HostName, isHttpConnect: Boolean)
+  // TODO Scala 3 trait
+  sealed abstract class HttpProxy {
+    def hostName: HostName
 
-  type HttpOrSocks5 = Either[HttpProxyRequest, Socks5CommandRequest]
+    def httpVersion: HttpVersion
+  }
+
+  final case class HttpConnect(hostName: HostName, httpVersion: HttpVersion) extends HttpProxy
+
+  final case class HttpProxyDumb(hostName: HostName, httpVersion: HttpVersion, buf: ByteBuf) extends HttpProxy
+
+  type HttpProxyOrSocks5 = Either[HttpProxy, Socks5CommandRequest]
 }

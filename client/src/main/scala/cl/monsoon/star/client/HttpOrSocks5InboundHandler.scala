@@ -1,10 +1,10 @@
 package cl.monsoon.star.client
 
 import cl.monsoon.star.BaseChannelInboundHandlerAdapter
+import cl.monsoon.star.client.protocol.HttpProxyFirstRequestHandler
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.http.HttpServerCodec
 import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 
 @Sharable
@@ -34,7 +34,7 @@ final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends Bas
 
         case _ =>
           // assume HTTP Proxy
-          ctxPipe.addLast(new HttpServerCodec())
+          ctxPipe.addLast(new HttpProxyFirstRequestHandler())
       }
     }
 
