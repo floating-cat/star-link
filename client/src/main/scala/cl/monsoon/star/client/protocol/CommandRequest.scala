@@ -16,7 +16,7 @@ object CommandRequest {
 
   final case class HttpConnect(hostName: HostName, httpVersion: HttpVersion) extends HttpProxy
 
-  final case class HttpProxyDumb(hostName: HostName, httpVersion: HttpVersion, buf: ByteBuf) extends HttpProxy
+  final case class HttpProxyDumb(hostName: HostName, httpVersion: HttpVersion, requestBuf: ByteBuf) extends HttpProxy
 
   type HttpProxyOrSocks5 = Either[HttpProxy, Socks5CommandRequest]
 }

@@ -1,13 +1,14 @@
 package cl.monsoon.star.client.protocol
 
 import java.net.InetSocketAddress
+import java.nio.charset.StandardCharsets
 
 import cl.monsoon.star._
 import cl.monsoon.star.client.protocol.CommandRequest.{HttpConnect, HttpProxy, HttpProxyDumb}
 import cl.monsoon.star.client.protocol.HttpProxyFirstRequestHandler.{HttpProxyBuilder, requestLineRegex}
 import cl.monsoon.star.config.IpAddressUtil
 import inet.ipaddr.HostName
-import io.netty.buffer.ByteBuf
+import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.http.{HttpMethod, HttpVersion}
 import io.netty.util.ReferenceCountUtil
@@ -49,8 +50,12 @@ final class HttpProxyFirstRequestHandler extends BaseChannelInboundHandlerAdapte
                 httpConnectBuilder = httpProxyBuilder
                 loopToSkipToEnd()
               } else {
-                ctx.fireChannelRead(httpProxyBuilder.toProxyDumb(buf.resetReaderIndex()))
+                // the buf may not contain full request line
+                // so we don't use buf.resetReaderIndex() here
+                ctx.fireChannelRead(httpProxyBuilder.toProxyDumb(v.toString, buf))
                 ctx.pipeline().remove(this)
+                // disable auto read here because the buf (HTTP request) may not be complete
+                ctx.channel().config().setAutoRead(false)
               }
 
             case Left(exception) =>
@@ -106,8 +111,10 @@ object HttpProxyFirstRequestHandler {
       HttpConnect(hostName, httpVersion)
     }
 
-    def toProxyDumb(buf: ByteBuf): HttpProxy = {
-      HttpProxyDumb(hostName, httpVersion, buf)
+    def toProxyDumb(requestLine: String, buf: ByteBuf): HttpProxy = {
+      val firstLine = s"$requestLine\r\n".getBytes(StandardCharsets.US_ASCII)
+      val fullBuf = Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(firstLine), buf)
+      HttpProxyDumb(hostName, httpVersion, fullBuf)
     }
   }
 

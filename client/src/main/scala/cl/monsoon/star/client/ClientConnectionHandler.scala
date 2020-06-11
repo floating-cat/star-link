@@ -62,7 +62,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
           inChannel)
 
       case Left(httpProxyDumb: HttpProxyDumb) =>
-        (httpProxyDumb.buf, outChannel)
+        (httpProxyDumb.requestBuf, outChannel)
     }
 
     writeResponseAndRelay(httpProxyOrSocks, response, responseOutputChannel, inChannel, outChannel)
@@ -100,7 +100,8 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
       case Left(_: HttpConnect) =>
         inPipe.remove(classOf[HttpResponseEncoder])
 
-      case _ =>
+      case Left(_: HttpProxyDumb) =>
+        inChannel.config().setAutoRead(true)
     }
   }
 
