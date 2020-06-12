@@ -7,6 +7,7 @@ import cl.monsoon.star._
 import cl.monsoon.star.client.protocol.CommandRequest.{HttpConnect, HttpProxy, HttpProxyDumb}
 import cl.monsoon.star.client.protocol.HttpProxyFirstRequestHandler.{HttpProxyBuilder, requestLineRegex}
 import cl.monsoon.star.config.IpAddressUtil
+import grizzled.slf4j.Logger
 import inet.ipaddr.HostName
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelHandlerContext
@@ -17,6 +18,8 @@ import scala.util.Try
 import scala.util.matching.Regex
 
 final class HttpProxyFirstRequestHandler extends BaseChannelInboundHandlerAdapter {
+
+  private val logger = Logger[this.type]
 
   private val headerParser = new HeaderParser()
   private var skipToEnd = false
@@ -58,18 +61,18 @@ final class HttpProxyFirstRequestHandler extends BaseChannelInboundHandlerAdapte
                 ctx.channel().config().setAutoRead(false)
               }
 
-            case Left(exception) =>
-              // TODO
-              exception.printStackTrace()
+            case Left(e) =>
               ReferenceCountUtil.release(msg)
               ctx.close()
+              logger.warn("Unable to parse the HTTP Proxy request line", e)
           }
 
         case Suspension =>
 
-        case _ =>
+        case s =>
           ReferenceCountUtil.release(msg)
           ctx.close()
+          logger.warn(s"Illegal state (${s.getClass.getName}) for HTTP Proxy request")
       }
     } else {
       loopToSkipToEnd()
@@ -79,7 +82,7 @@ final class HttpProxyFirstRequestHandler extends BaseChannelInboundHandlerAdapte
   @throws[Exception]
   private def toHttpProxyRequest(requestLine: String): Either[Throwable, HttpProxyBuilder] = {
     requestLineRegex.unapplySeq(requestLine)
-      .toRight(new RuntimeException)
+      .toRight(new IllegalArgumentException(s"Incorrect HTTP Proxy request line format: $requestLine"))
       .flatMap { m =>
         Try {
           val httpConnect = HttpMethod.valueOf(m.head) == HttpMethod.CONNECT

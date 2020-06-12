@@ -2,11 +2,14 @@ package cl.monsoon.star.client.rule
 
 import cl.monsoon.star.client.config._
 import cl.monsoon.star.config.IpAddressUtil
+import grizzled.slf4j.Logger
 import inet.ipaddr.{HostName, IPAddress}
 
 import scala.util.{Failure, Success, Try}
 
 final class Router(rule: Rule) {
+
+  private val logger = Logger[this.type]
 
   private val priority: List[RuleTag] = getTagPriority(rule)
   // TODO in future Scala version
@@ -31,9 +34,8 @@ final class Router(rule: Rule) {
           `match`(hostName)(domainSuffixMather)
         }
 
-      case Failure(exception) =>
-        // TODO
-        println(exception)
+      case Failure(e) =>
+        logger.warn(s"Incorrect host name or IP: $address", e)
         RejectRouteResult
     }
   }

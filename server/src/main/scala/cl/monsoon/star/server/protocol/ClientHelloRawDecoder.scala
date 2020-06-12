@@ -4,12 +4,15 @@ import java.util
 
 import cl.monsoon.star.config.Password
 import cl.monsoon.star.server.protocol.ClientHelloInfoDecoder.decodeCommand
+import grizzled.slf4j.Logger
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.socksx.v5._
 import io.netty.handler.codec.{ByteToMessageDecoder, ReplayingDecoder}
 
 final class ClientHelloDecoder(password: Password) extends ByteToMessageDecoder {
+
+  private val logger = Logger[this.type]
 
   private val passwordBytesLength: Int = password.value.length
   private val pw: ByteBuf = Unpooled.wrappedBuffer(password.value)
@@ -23,6 +26,7 @@ final class ClientHelloDecoder(password: Password) extends ByteToMessageDecoder 
         ctx.pipeline().remove(this)
       } else {
         ctx.close()
+        logger.warn("Incorrect password received from the client")
       }
     }
   }

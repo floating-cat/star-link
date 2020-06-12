@@ -6,6 +6,7 @@ import cl.monsoon.star._
 import cl.monsoon.star.client.config.{ProxyTag, ServerInfo}
 import cl.monsoon.star.client.protocol.CommandRequest.{HttpConnect, HttpProxyDumb, HttpProxyOrSocks5}
 import cl.monsoon.star.client.protocol.{ClientHelloEncoder, ServerHelloWsHandler}
+import grizzled.slf4j.Logger
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
@@ -18,6 +19,8 @@ import scala.util.chaining._
 
 @Sharable
 private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
+
+  protected val logger: Logger = Logger[this.type]
 
   final override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
     val promise = inContext.executor.newPromise[Channel]
@@ -78,6 +81,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
         } else {
           ChannelUtil.closeOnFlush(inChannel)
           ChannelUtil.closeOnFlush(outChannel)
+          logger.warn(s"Unable to send response for ${httpProxyOrSocks.merge}")
         }
       })
   }
@@ -112,6 +116,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
 
     inChannel.writeAndFlush(response, inChannel.voidPromise())
     ChannelUtil.closeOnFlush(inChannel)
+    logger.warn(s"Send failure response for ${httpProxyOrSocks.merge}")
   }
 }
 
@@ -123,6 +128,8 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
     serverInfo.hostname.asInetSocketAddress()
 
   override def onConnected(httpProxyOrSocks: HttpProxyOrSocks5, inChannel: Channel, outChannel: Channel): Unit = {
+    logger.debug(s"Proxy request for ${httpProxyOrSocks.merge}")
+
     outChannel.pipeline().addLast(
       SslUtil.handler(outChannel, serverInfo, devMode),
       ClientHelloEncoder(stringTag, serverInfo))
@@ -151,11 +158,14 @@ private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 
   override def onConnected(httpProxyOrSocks: HttpProxyOrSocks5, inChannel: Channel, outChannel: Channel): Unit = {
     sendSuccessResponseAndStartRelay(httpProxyOrSocks, inChannel, outChannel)
+    logger.debug(s"Direct request: ${httpProxyOrSocks.merge}")
   }
 }
 
 @Sharable
 private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
+
+  protected val logger: Logger = Logger[this.type]
 
   override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
     val response = httpProxyOrSocks.fold(
@@ -164,6 +174,7 @@ private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHan
 
     inContext.channel.writeAndFlush(response, inContext.voidPromise())
     ChannelUtil.closeOnFlush(inContext.channel)
+    logger.debug(s"Reject request: ${httpProxyOrSocks.merge}")
   }
 }
 

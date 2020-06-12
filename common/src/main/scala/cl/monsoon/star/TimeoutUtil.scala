@@ -1,5 +1,6 @@
 package cl.monsoon.star
 
+import grizzled.slf4j.Logger
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{ChannelDuplexHandler, ChannelHandlerContext, ChannelPipeline}
 import io.netty.handler.codec.ByteToMessageDecoder
@@ -28,10 +29,13 @@ object TimeoutUtil {
 @Sharable
 private object IdleStateEventHandler extends ChannelDuplexHandler {
 
+  private val logger = Logger[this.type]
+
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
     evt match {
-      case _: IdleStateEvent =>
+      case event: IdleStateEvent =>
         ctx.close()
+        logger.warn(s"Timeout: $event")
       case _ =>
     }
   }

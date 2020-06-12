@@ -1,6 +1,7 @@
 package cl.monsoon.star.server
 
 import cl.monsoon.star._
+import grizzled.slf4j.Logger
 import io.netty.bootstrap.Bootstrap
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel._
@@ -8,6 +9,8 @@ import io.netty.handler.codec.socksx.v5.Socks5CommandRequest
 import io.netty.util.concurrent.Future
 
 final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
+
+  private val logger = Logger[this.type]
 
   private var receivedClientHello = false
   private var buffer: ByteBuf = Unpooled.EMPTY_BUFFER
@@ -17,6 +20,7 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
       receivedClientHello = true
 
       val request = msg.asInstanceOf[Socks5CommandRequest]
+      logger.debug(s"Request ${request.dstAddr}:${request.dstPort}")
       val promise = inContext.executor.newPromise[Channel]
       promise.addListener((future: Future[Channel]) => {
         val outChannel = future.getNow
@@ -30,6 +34,7 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
         } else {
           buffer.release()
           ChannelUtil.closeOnFlush(inContext.channel)
+          logger.warn("Failed to establish a relay channel", future.cause())
         }
       })
 
@@ -42,6 +47,7 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
         if (!future.isSuccess) {
           buffer.release()
           ChannelUtil.closeOnFlush(inContext.channel)
+          logger.info("Failed to connect requested host", future.cause())
         }
       })
     } else {

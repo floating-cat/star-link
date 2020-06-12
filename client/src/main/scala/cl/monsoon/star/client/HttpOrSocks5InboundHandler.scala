@@ -2,6 +2,7 @@ package cl.monsoon.star.client
 
 import cl.monsoon.star.BaseChannelInboundHandlerAdapter
 import cl.monsoon.star.client.protocol.HttpProxyFirstRequestHandler
+import grizzled.slf4j.Logger
 import io.netty.buffer.ByteBuf
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.ChannelHandlerContext
@@ -9,6 +10,8 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 
 @Sharable
 final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends BaseChannelInboundHandlerAdapter {
+
+  private val logger = Logger[this.type]
 
   private val socks4ProtocolFirstByte: Byte = 4
   private val socks5ProtocolFirstByte: Byte = 5
@@ -30,6 +33,7 @@ final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends Bas
           // we don't support SOCKS4
           buf.release()
           ctx.close()
+          logger.info(s"SOCKS4 request refused")
           return
 
         case _ =>
