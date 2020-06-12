@@ -5,11 +5,13 @@ import java.net.InetSocketAddress
 import cl.monsoon.star.client.config.ClientConfig.{DefaultAddress, DefaultSocks5Port}
 import cl.monsoon.star.config.{IpAddressUtil, Password, Port}
 import inet.ipaddr.{HostName, IPAddress}
+import org.apache.logging.log4j.Level
 
 import scala.collection.immutable.Map
 
 final case class ClientConfig(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
                               proxy: Proxy, rule: Rule,
+                              logLevel: Level = Level.INFO,
                               testMode: Boolean = false) {
   def toSocks5InetSocketAddress: InetSocketAddress =
     new InetSocketAddress(listenIp.toInetAddress, listenPort.value)

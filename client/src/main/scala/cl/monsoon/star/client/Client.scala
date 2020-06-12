@@ -2,11 +2,14 @@ package cl.monsoon.star.client
 
 import java.nio.file.Path
 
-import cl.monsoon.star.BootstrapUtil
 import cl.monsoon.star.client.config.ClientConfigParserUtil
 import cl.monsoon.star.client.rule.Router
+import cl.monsoon.star.{BootstrapUtil, LogUtil}
+import grizzled.slf4j.Logger
 
 object Client {
+
+  private val logger = Logger[this.type]
 
   def run(configPath: Path): Unit = {
     // We need to use toAbsolutePath here in order to let the HOCON file
@@ -20,6 +23,8 @@ object Client {
         val socketAddress = config.toSocks5InetSocketAddress
         val router = new Router(config.rule)
         val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, router, config.testMode))
+        LogUtil.setLevel(config.logLevel)
+        logger.info("star-link client start")
         BootstrapUtil.server(socketAddress, clientInitializer)
 
       case Left(configReaderFailures) =>

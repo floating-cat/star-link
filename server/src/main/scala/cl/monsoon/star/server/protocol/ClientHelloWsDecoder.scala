@@ -7,6 +7,7 @@ import java.util.Base64
 import cl.monsoon.star._
 import cl.monsoon.star.config.Password
 import cl.monsoon.star.server.protocol.ClientHelloWsDecoder.{clientHelloInfoRegex, passwordRegex, wsResponse}
+import grizzled.slf4j.Logger
 import io.netty.buffer.{ByteBuf, Unpooled}
 import io.netty.channel.ChannelHandlerContext
 import io.netty.handler.codec.ByteToMessageDecoder
@@ -15,6 +16,8 @@ import io.netty.handler.codec.socksx.v5._
 import scala.util.matching.Regex
 
 final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecoder {
+
+  private val logger = Logger[this.type]
 
   private val headerParser = new HeaderParser()
   private var first: Boolean = true
@@ -27,9 +30,12 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
         first = false
         val pw = passwordRegex.findFirstMatchIn(v)
           .filter(m => Base64.getDecoder.decode(m.group(1)).sameElements(password.value))
-        if (pw.isEmpty) ctx.close()
+        if (pw.isEmpty) {
+          ctx.close()
+          logger.warn("Incorrect password/Client Hello request line format received from the client")
+        }
 
-      case Value(clientHelloInfoRegex(v)) =>
+      case Value(clientHelloInfoRegex(v)) if clientHelloInfo.isEmpty =>
         val buf = Unpooled.wrappedBuffer(Base64.getDecoder.decode(v))
         clientHelloInfo = Some(ClientHelloInfoDecoder.decodeCommand(buf))
 
@@ -42,8 +48,10 @@ final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecode
 
         ctx.pipeline().remove(this)
         TimeoutUtil.removeTimeoutHandlers(ctx.pipeline())
-      case _ =>
+
+      case s =>
         ctx.close()
+        logger.warn(s"Illegal state (${s.getClass.getName}) for Client Hello request")
     }
   }
 }

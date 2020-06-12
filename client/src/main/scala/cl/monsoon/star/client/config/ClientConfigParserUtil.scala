@@ -5,6 +5,7 @@ import java.nio.file.Path
 import cl.monsoon.star.client.config.ClientConfig.{DefaultAddress, DefaultSocks5Port}
 import cl.monsoon.star.config.Port
 import inet.ipaddr.IPAddress
+import org.apache.logging.log4j.Level
 import pureconfig.ConfigReader.Result
 import pureconfig.{ConfigReader, ConfigSource}
 
@@ -15,7 +16,7 @@ object ClientConfigParserUtil {
   private case class ProxyWrapper(proxy: Proxy)
 
   private case class ClientConfigWithoutProxy(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
-                                              rule: Rule, testMode: Boolean = false)
+                                              rule: Rule, logLevel: Level = Level.INFO, testMode: Boolean = false)
 
   def parse(config: Path): Result[ClientConfig] = {
     import pureconfig.generic.auto._
@@ -30,7 +31,7 @@ object ClientConfigParserUtil {
 
       val configWithoutProxyEither = configObjectSource.load[ClientConfigWithoutProxy]
       configWithoutProxyEither.map(c =>
-        ClientConfig(c.listenIp, c.listenPort, proxyWrapper.proxy, c.rule, c.testMode))
+        ClientConfig(c.listenIp, c.listenPort, proxyWrapper.proxy, c.rule, c.logLevel, c.testMode))
     }
   }
 }

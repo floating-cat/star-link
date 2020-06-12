@@ -4,12 +4,15 @@ import cl.monsoon.star.client.config.Proxy
 import cl.monsoon.star.client.protocol.CommandRequest.HttpProxy
 import cl.monsoon.star.client.rule._
 import cl.monsoon.star.{BaseChannelInboundHandlerAdapter, TimeoutUtil}
+import grizzled.slf4j.Logger
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandler}
 import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 
 @Sharable
 final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends BaseChannelInboundHandlerAdapter {
+
+  private val logger = Logger[this.type]
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     msg match {
@@ -33,7 +36,9 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
         ctx.fireChannelRead(Left(httpProxy))
         ctx.pipeline().remove(this)
 
-      case _ => ctx.close
+      case s =>
+        ctx.close
+        logger.warn(s"Illegal state (${s.getClass.getName}) when reading")
     }
   }
 

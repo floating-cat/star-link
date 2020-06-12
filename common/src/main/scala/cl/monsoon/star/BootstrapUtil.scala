@@ -4,7 +4,6 @@ import java.net.SocketAddress
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel.ChannelHandler
-import io.netty.handler.logging.{LogLevel, LoggingHandler}
 
 object BootstrapUtil {
 
@@ -14,7 +13,6 @@ object BootstrapUtil {
       new ServerBootstrap()
         .group(group)
         .channel(NettyEngine.Default.serverSocketChannelClass)
-        .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(childHandler)
         .bind(socketAddress).sync()
         .channel()
