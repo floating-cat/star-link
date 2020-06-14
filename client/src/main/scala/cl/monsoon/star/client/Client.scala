@@ -25,7 +25,11 @@ object Client {
         val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, router, config.testMode))
         LogUtil.setLevel(config.logLevel)
         logger.info("star-link client start")
-        BootstrapUtil.server(socketAddress, clientInitializer)
+        BootstrapUtil.server(socketAddress, clientInitializer,
+          if (config.systemProxy) {
+            SystemProxy.enable(config.listenIp.toString, config.listenPort.value)
+            SystemProxy.addDisablingHook()
+          })
 
       case Left(configReaderFailures) =>
         Console.err.println(s"Failed to parse the config file: $configAbsolutePath\n")

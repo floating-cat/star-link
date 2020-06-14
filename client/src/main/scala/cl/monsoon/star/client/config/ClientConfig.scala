@@ -9,7 +9,9 @@ import org.apache.logging.log4j.Level
 
 import scala.collection.immutable.Map
 
-final case class ClientConfig(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
+final case class ClientConfig(listenIp: IPAddress = DefaultAddress,
+                              listenPort: Port = DefaultSocks5Port,
+                              systemProxy: Boolean = false,
                               proxy: Proxy, rule: Rule,
                               logLevel: Level = Level.INFO,
                               testMode: Boolean = false) {

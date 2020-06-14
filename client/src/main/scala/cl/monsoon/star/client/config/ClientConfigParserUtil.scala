@@ -15,8 +15,17 @@ object ClientConfigParserUtil {
 
   private case class ProxyWrapper(proxy: Proxy)
 
-  private case class ClientConfigWithoutProxy(listenIp: IPAddress = DefaultAddress, listenPort: Port = DefaultSocks5Port,
-                                              rule: Rule, logLevel: Level = Level.INFO, testMode: Boolean = false)
+  private case class ClientConfigWithoutProxy(listenIp: IPAddress = DefaultAddress,
+                                              listenPort: Port = DefaultSocks5Port,
+                                              systemProxy: Boolean = false,
+                                              rule: Rule,
+                                              logLevel: Level = Level.INFO,
+                                              testMode: Boolean = false) {
+
+    def toClientConfig(proxyWrapper: ProxyWrapper): ClientConfig = {
+      ClientConfig(listenIp, listenPort, systemProxy, proxyWrapper.proxy, rule, logLevel, testMode)
+    }
+  }
 
   def parse(config: Path): Result[ClientConfig] = {
     import pureconfig.generic.auto._
@@ -30,8 +39,7 @@ object ClientConfigParserUtil {
       import cl.monsoon.star.config.CommonConfigReader._
 
       val configWithoutProxyEither = configObjectSource.load[ClientConfigWithoutProxy]
-      configWithoutProxyEither.map(c =>
-        ClientConfig(c.listenIp, c.listenPort, proxyWrapper.proxy, c.rule, c.logLevel, c.testMode))
+      configWithoutProxyEither.map(_.toClientConfig(proxyWrapper))
     }
   }
 }
