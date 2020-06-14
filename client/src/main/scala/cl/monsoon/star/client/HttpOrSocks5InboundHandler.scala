@@ -33,7 +33,7 @@ final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends Bas
           // we don't support SOCKS4
           buf.release()
           ctx.close()
-          logger.info(s"SOCKS4 request refused")
+          logger.info("SOCKS4 request refused")
           return
 
         case _ =>
