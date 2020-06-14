@@ -41,10 +41,10 @@ object SystemProxy {
 
   private def disable(): Unit = {
     run(
-      s"""
-         |gsettings set org.gnome.system.proxy mode "none" ;
-         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
-         |""".stripMargin.replace('\n', ' '))
+      """
+        |gsettings set org.gnome.system.proxy mode "none" ;
+        |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 0
+        |""".stripMargin.replace('\n', ' '))
   }
 
   private def run(linuxCommands: => String): Unit = {
