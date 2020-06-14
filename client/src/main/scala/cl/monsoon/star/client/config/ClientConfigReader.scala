@@ -50,7 +50,7 @@ object ClientConfigReader {
 
   def ruleReader(proxy: Proxy): ConfigReader[Rule] = {
     ConfigReader.fromCursor[Rule] { cur =>
-      cur.asObjectCursor.flatMap { objCur => {
+      cur.asObjectCursor.flatMap { objCur =>
         val finalKey = "final"
         val proxyTags = proxy.server.keys.toList
 
@@ -72,7 +72,6 @@ object ClientConfigReader {
           case (Left(errs), _) => Left(errs)
           case (_, Left(errs)) => Left(errs)
         }
-      }
       }
     }
   }

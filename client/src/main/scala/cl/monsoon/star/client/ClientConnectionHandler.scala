@@ -25,13 +25,13 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
   final override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
     val promise = inContext.executor.newPromise[Channel]
     val inChannel = inContext.channel
-    promise.addListener((future: Future[Channel]) => {
+    promise.addListener { future: Future[Channel] =>
       if (future.isSuccess) {
         onConnected(httpProxyOrSocks, inChannel, future.getNow)
       } else {
         sendFailureResponse(httpProxyOrSocks, inChannel)
       }
-    })
+    }
 
     new Bootstrap()
       .group(inChannel.eventLoop)
@@ -39,11 +39,11 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
       .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
       .handler(new DirectClientHandler(promise))
       .connect(serverSocketAddress(httpProxyOrSocks))
-      .addListener((future: ChannelFuture) => {
+      .addListener { future: ChannelFuture =>
         if (!future.isSuccess) {
           sendFailureResponse(httpProxyOrSocks, inChannel)
         }
-      })
+      }
   }
 
   protected def serverSocketAddress(httpProxyOrSocks: HttpProxyOrSocks5): InetSocketAddress
@@ -75,7 +75,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
                                     responseOutputChannel: Channel,
                                     inChannel: Channel, outChannel: Channel) = {
     responseOutputChannel.writeAndFlush(response)
-      .addListener((responseFuture: ChannelFuture) => {
+      .addListener { responseFuture: ChannelFuture =>
         if (responseFuture.isSuccess) {
           relayAndRemoveUnneededHandlers(httpProxyOrSocks, inChannel, outChannel)
         } else {
@@ -83,7 +83,7 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
           ChannelUtil.closeOnFlush(outChannel)
           logger.warn(s"Unable to send response for ${httpProxyOrSocks.merge}")
         }
-      })
+      }
   }
 
   private def relayAndRemoveUnneededHandlers(httpProxyOrSocks: HttpProxyOrSocks5,
@@ -135,7 +135,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
       ClientHelloEncoder(stringTag, serverInfo))
 
     outChannel.writeAndFlush(httpProxyOrSocks)
-      .addListener((requestFuture: ChannelFuture) => {
+      .addListener { requestFuture: ChannelFuture =>
         if (requestFuture.isSuccess) {
           outChannel.pipeline()
             .addLast(new ServerHelloWsHandler(
@@ -144,7 +144,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
           sendFailureResponse(httpProxyOrSocks, inChannel)
           ChannelUtil.closeOnFlush(outChannel)
         }
-      })
+      }
   }
 }
 
