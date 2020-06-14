@@ -29,7 +29,10 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
           ctxPipe.addLast(decide(commandRequest.dstAddr()))
           ctx.fireChannelRead(Right(commandRequest))
           ctxPipe.remove(this)
-        } else ctx.close
+        } else {
+          ctx.close
+          logger.info(s"SOCKS5 command (${commandRequest.`type`}) refused")
+        }
 
       case httpProxy: HttpProxy =>
         ctx.pipeline().addLast(decide(httpProxy.hostName.getHost))
