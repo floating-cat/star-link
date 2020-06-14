@@ -34,10 +34,10 @@ object ClientConfigResultUtil {
 
   private def toServerInfo(address: String, port: String, password: String): Either[FailureReason, ServerInfo] =
     toHostName(address, port)
-      .flatMap(hostName => {
+      .flatMap { hostName =>
         toPassword(password)
           .map(ServerInfo(hostName, _))
-      })
+      }
 
   private def toHostName(address: String, port: String): Either[FailureReason, HostName] = {
     Try(IpAddressUtil.toHostNameWithoutPort(address))

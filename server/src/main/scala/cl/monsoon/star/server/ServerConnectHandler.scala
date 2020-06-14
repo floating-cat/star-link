@@ -22,7 +22,7 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
       val request = msg.asInstanceOf[Socks5CommandRequest]
       logger.debug(s"Request ${request.dstAddr}:${request.dstPort}")
       val promise = inContext.executor.newPromise[Channel]
-      promise.addListener((future: Future[Channel]) => {
+      promise.addListener { future: Future[Channel] =>
         val outChannel = future.getNow
         if (future.isSuccess) {
           inContext.pipeline()
@@ -36,20 +36,20 @@ final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
           ChannelUtil.closeOnFlush(inContext.channel)
           logger.warn("Failed to establish a relay channel", future.cause())
         }
-      })
+      }
 
       val inboundChannel = inContext.channel
       new Bootstrap().group(inboundChannel.eventLoop)
         .channel(NettyEngine.Default.socketChannelClass)
         .option[Integer](ChannelOption.CONNECT_TIMEOUT_MILLIS, TimeoutUtil.ConnectTimeoutMillis)
         .handler(new DirectClientHandler(promise))
-        .connect(request.dstAddr, request.dstPort).addListener((future: ChannelFuture) => {
+        .connect(request.dstAddr, request.dstPort).addListener { future: ChannelFuture =>
         if (!future.isSuccess) {
           buffer.release()
           ChannelUtil.closeOnFlush(inContext.channel)
           logger.info("Failed to connect requested host", future.cause())
         }
-      })
+      }
     } else {
       buffer = Unpooled.wrappedBuffer(buffer, msg.asInstanceOf[ByteBuf])
     }

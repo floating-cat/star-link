@@ -21,14 +21,14 @@ final class IpCidrMatcher(ipCidrList: List[IPAddress]) {
   private def toArrayPair(ipCidrList: List[IPAddress]): (Array[(Int, Int)], Array[(BigInteger, BigInteger)]) = {
     val (ipv4Cidr, ipv6Cidr) = ipCidrList.partition(_.isIPv4)
 
-    val ipv4Cidrs = ipv4Cidr.view.map(ipCidr => {
+    val ipv4Cidrs = ipv4Cidr.view.map { ipCidr =>
       val ipv4 = ipCidr.toIPv4
       (ipv4.intValue(), ipv4.upperIntValue())
-    }).toArray.sorted
+    }.toArray.sorted
 
-    val ipv6Cidrs = ipv6Cidr.view.map(ipv6Cidr => {
+    val ipv6Cidrs = ipv6Cidr.view.map { ipv6Cidr =>
       (ipv6Cidr.getValue, ipv6Cidr.getUpperValue)
-    }).toArray.sorted
+    }.toArray.sorted
 
     (ipv4Cidrs, ipv6Cidrs)
   }
