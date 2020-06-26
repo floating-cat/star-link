@@ -55,7 +55,10 @@ lazy val common = project
 
 lazy val client = project
   .dependsOn(common)
-  .settings(valueDiscardSetting)
+  .settings(
+    valueDiscardSetting,
+    libraryDependencies += "net.java.dev.jna" % "jna" % "5.5.0",
+  )
 
 lazy val server = project
   .dependsOn(common)
