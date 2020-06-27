@@ -1,5 +1,7 @@
 package cl.monsoon.star.client
 
+import java.net.InetSocketAddress
+
 import grizzled.slf4j.Logger
 
 import scala.sys.process._
@@ -11,30 +13,31 @@ object SystemProxy {
 
   private val processLogger = ProcessLogger(_ => (), e => logger.error(s"Failed to set system proxy, $e"))
 
-  def enable(listenHost: String, listenPort: Int): Unit = {
-    val host = if (listenHost == "0.0.0.0") "127.0.0.1" else listenHost
+  def enable(socketAddress: InetSocketAddress): Unit = {
+    val host = if (socketAddress.getHostString == "0.0.0.0") "127.0.0.1" else socketAddress.getHostString
+    val port = socketAddress.getPort
 
     val linuxCommandsMultiline =
       s"""
          |gsettings set org.gnome.system.proxy mode 'manual' &&
          |gsettings set org.gnome.system.proxy.socks host '$host' &&
-         |gsettings set org.gnome.system.proxy.socks port $listenPort &&
+         |gsettings set org.gnome.system.proxy.socks port $port &&
          |gsettings set org.gnome.system.proxy.https host '$host' &&
-         |gsettings set org.gnome.system.proxy.https port $listenPort &&
+         |gsettings set org.gnome.system.proxy.https port $port &&
          |gsettings set org.gnome.system.proxy.http host '$host' &&
-         |gsettings set org.gnome.system.proxy.http port $listenPort &&
+         |gsettings set org.gnome.system.proxy.http port $port &&
          |gsettings set org.gnome.system.proxy.ftp host '$host' &&
-         |gsettings set org.gnome.system.proxy.ftp port $listenPort ;
+         |gsettings set org.gnome.system.proxy.ftp port $port ;
          |
          |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ProxyType" 1 &&
-         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "socksProxy" "socks://$host $listenPort" &&
-         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "httpsProxy" "http://$host $listenPort" &&
-         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "httpProxy" "http://$host $listenPort" &&
-         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ftpProxy" "http://$host $listenPort"
+         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "socksProxy" "socks://$host $port" &&
+         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "httpsProxy" "http://$host $port" &&
+         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "httpProxy" "http://$host $port" &&
+         |kwriteconfig5 --file kioslaverc --group "Proxy Settings" --key "ftpProxy" "http://$host $port"
          |"""
 
     run(runForLinux(linuxCommandsMultiline),
-      runForWindows(proxy = true, host, listenPort))
+      runForWindows(proxy = true, host, port))
   }
 
   def addDisablingHook(): Unit = {
