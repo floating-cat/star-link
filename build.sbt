@@ -1,6 +1,6 @@
 name := "star-link"
 ThisBuild / organization := "cl.monsoon"
-ThisBuild / version := "0.1.0"
+ThisBuild / version := "0.1.1"
 ThisBuild / scalaVersion := "2.13.3"
 val projectPackageName = "cl.monsoon.star"
 
