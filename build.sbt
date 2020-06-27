@@ -41,6 +41,7 @@ lazy val link = project
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
+  // TODO: add https://stackoverflow.com/q/57885828 for JDK 11 docker image in the future
   .enablePlugins(GraalVMNativeImagePlugin)
   .enablePlugins(DockerPlugin)
 
