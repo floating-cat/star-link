@@ -21,7 +21,7 @@ lazy val link = project
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
     graalVMNativeImageOptions ++= {
       val graalPath = sourceDirectory.value / "graal"
-      List(
+      Seq(
         "--no-server",
         "-H:+TraceClassInitialization",
         "-H:+ReportExceptionStackTraces",

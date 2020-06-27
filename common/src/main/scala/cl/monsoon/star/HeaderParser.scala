@@ -13,7 +13,7 @@ class HeaderParser extends ByteProcessor {
 
   private var size = 0
   // TODO
-  // Max header in our WebSocket packet is 32 characters in length.
+  // max header in our WebSocket packet is 32 characters in length
   private val seq: AppendableCharSequence = new AppendableCharSequence(32)
 
   def parse(buffer: ByteBuf): Cursor = {
@@ -36,7 +36,7 @@ class HeaderParser extends ByteProcessor {
     val nextByte = (value & 0xFF).toChar
     if (nextByte == HttpConstants.LF) {
       val len = seq.length
-      // Drop CR if we had a CRLF pair
+      // drop CR if we had a CRLF pair
       if (len >= 1 && seq.charAtUnsafe(len - 1) == HttpConstants.CR) {
         size -= 1
         seq.setLength(len - 1)
