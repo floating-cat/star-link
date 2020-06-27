@@ -4,7 +4,8 @@ ThisBuild / version := "0.1.0"
 ThisBuild / scalaVersion := "2.13.3"
 val projectPackageName = "cl.monsoon.star"
 
-lazy val root = project in file(".")
+lazy val root: Project = (project in file("."))
+  .aggregate(link, client, server, common)
 
 lazy val link = project
   .dependsOn(client, server)
