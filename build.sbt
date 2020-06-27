@@ -16,9 +16,6 @@ lazy val link = project
 
     mainClass in Compile := Some(s"$projectPackageName.link.Star"),
     discoveredMainClasses in Compile := Seq(),
-    jlinkIgnoreMissingDependency := JlinkIgnore.everything,
-    // We need access to sun.misc to see if direct buffers are available for Netty
-    jlinkModules ++= List("jdk.unsupported"),
     bashScriptConfigLocation := Some("${app_home}/../conf/application.ini"),
 
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
@@ -44,7 +41,6 @@ lazy val link = project
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(JlinkPlugin)
   .enablePlugins(GraalVMNativeImagePlugin)
   .enablePlugins(DockerPlugin)
 
