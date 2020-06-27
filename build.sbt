@@ -35,13 +35,13 @@ lazy val link = project
     packageName in Docker := "star-link",
     dockerUsername := Some("aasterism"),
     dockerUpdateLatest := true,
+    dockerBaseImage := "adoptopenjdk/openjdk11:debianslim-jre",
     dockerEntrypoint := Seq("/opt/docker/bin/link", "-s", "/etc/star-link/server.conf",
-      "-J-Xmx20m", "-J-XX:MaxDirectMemorySize=20m"),
+      "-J-Xmx30m", "-J-XX:MaxDirectMemorySize=20m"),
     dockerExposedVolumes := Seq("/opt/docker/logs")
   )
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
-  // TODO: add https://stackoverflow.com/q/57885828 for JDK 11 docker image in the future
   .enablePlugins(GraalVMNativeImagePlugin)
   .enablePlugins(DockerPlugin)
 
