@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="StarTestForDebugging" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="cl.monsoon.star.link.StarTest" />
+  <configuration default="false" name="StarDev" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="cl.monsoon.star.link.StarDev" />
     <module name="link" />
     <extension name="coverage">
       <pattern>
