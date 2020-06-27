@@ -89,13 +89,13 @@ object ClientConfigReader {
   }
 
   private def domainOrDomainList(str: String): List[HostName] = {
-    if (str == "..cn") CnDomainSuffixCollector.cnSuffixList()
+    if (str == "..cn") CnDomainSuffixCollector.get()
     else List(IpAddressUtil.toDomainName(str))
   }
 
   private def ipCidrOrIpCidrList(str: String): List[IPAddress] = {
-    if (str == "..cn") CnIpCidrCollector.ipCidrList()
-    else if (str == "..private") PrivateIpCidrCollector.privateIpCidrList()
+    if (str == "..cn") CnIpCidrCollector.get()
+    else if (str == "..private") PrivateIpCidrCollector.get()
     else List(IpAddressUtil.toIpOrCidr(str))
   }
 
