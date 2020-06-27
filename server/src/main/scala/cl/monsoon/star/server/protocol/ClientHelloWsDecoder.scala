@@ -17,7 +17,7 @@ import scala.util.matching.Regex
 
 final class ClientHelloWsDecoder(password: Password) extends ByteToMessageDecoder {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val headerParser = new HeaderParser()
   private var first: Boolean = true

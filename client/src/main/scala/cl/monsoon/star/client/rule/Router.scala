@@ -9,7 +9,7 @@ import scala.util.{Failure, Success, Try}
 
 final class Router(rule: Rule) {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val priority: List[RuleTag] = getTagPriority(rule)
   // TODO in future Scala version

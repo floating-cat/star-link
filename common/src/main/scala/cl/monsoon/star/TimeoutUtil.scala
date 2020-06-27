@@ -29,7 +29,7 @@ object TimeoutUtil {
 @Sharable
 private object IdleStateEventHandler extends ChannelDuplexHandler {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   override def userEventTriggered(ctx: ChannelHandlerContext, evt: Any): Unit = {
     evt match {

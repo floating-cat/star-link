@@ -12,7 +12,7 @@ import io.netty.handler.codec.{ByteToMessageDecoder, ReplayingDecoder}
 
 final class ClientHelloDecoder(password: Password) extends ByteToMessageDecoder {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val passwordBytesLength: Int = password.value.length
   private val pw: ByteBuf = Unpooled.wrappedBuffer(password.value)

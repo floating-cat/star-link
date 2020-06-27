@@ -7,7 +7,7 @@ import scala.util.Try
 
 object SystemProxy {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val processLogger = ProcessLogger(_ => (), e => logger.error(s"Failed to set system proxy, $e"))
 
