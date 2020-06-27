@@ -37,7 +37,7 @@ lazy val link = project
     dockerUpdateLatest := true,
     dockerBaseImage := "adoptopenjdk/openjdk11:debianslim-jre",
     dockerEntrypoint := Seq("/opt/docker/bin/link", "-s", "/etc/star-link/server.conf",
-      "-J-Xmx30m", "-J-XX:MaxDirectMemorySize=20m"),
+      "-J-Xmx30m", "-J-XX:MaxDirectMemorySize=30m"),
     dockerExposedVolumes := Seq("/opt/docker/logs")
   )
   .enablePlugins(BuildInfoPlugin)
