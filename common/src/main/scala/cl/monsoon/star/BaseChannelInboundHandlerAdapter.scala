@@ -5,7 +5,7 @@ import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
 
 class BaseChannelInboundHandlerAdapter extends ChannelInboundHandlerAdapter {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit = {
     ctx.close()

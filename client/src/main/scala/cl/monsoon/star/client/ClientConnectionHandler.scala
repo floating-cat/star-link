@@ -20,7 +20,7 @@ import scala.util.chaining._
 @Sharable
 private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
 
-  protected val logger: Logger = Logger[this.type]
+  protected val logger: Logger = Logger[this.type]()
 
   final override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
     val promise = inContext.executor.newPromise[Channel]
@@ -165,7 +165,7 @@ private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 @Sharable
 private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
 
-  protected val logger: Logger = Logger[this.type]
+  protected val logger: Logger = Logger[this.type]()
 
   override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
     val response = httpProxyOrSocks.fold(

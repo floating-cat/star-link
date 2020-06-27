@@ -9,7 +9,7 @@ import grizzled.slf4j.Logger
 
 object Client {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   def run(configPath: Path): Unit = {
     // We need to use toAbsolutePath here in order to let the HOCON file

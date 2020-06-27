@@ -10,7 +10,7 @@ import pureconfig.ConfigSource
 
 object Server {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   def run(configPath: Path): Unit = {
     import pureconfig.generic.auto._

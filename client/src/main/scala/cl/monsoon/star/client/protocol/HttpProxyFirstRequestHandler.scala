@@ -19,7 +19,7 @@ import scala.util.matching.Regex
 
 final class HttpProxyFirstRequestHandler extends BaseChannelInboundHandlerAdapter {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val headerParser = new HeaderParser()
   private var skipToEnd = false

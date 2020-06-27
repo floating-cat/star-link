@@ -11,7 +11,7 @@ import io.netty.handler.codec.socksx.SocksPortUnificationServerHandler
 @Sharable
 final class HttpOrSocks5InboundHandler(clientHandler: ClientHandler) extends BaseChannelInboundHandlerAdapter {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private val socks4ProtocolFirstByte: Byte = 4
   private val socks5ProtocolFirstByte: Byte = 5

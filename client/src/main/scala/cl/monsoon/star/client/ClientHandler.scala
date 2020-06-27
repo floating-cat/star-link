@@ -12,7 +12,7 @@ import io.netty.handler.codec.socksx.v5.{Socks5CommandRequest, _}
 @Sharable
 final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extends BaseChannelInboundHandlerAdapter {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
     msg match {

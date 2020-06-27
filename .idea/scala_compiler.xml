@@ -22,7 +22,6 @@
         <parameter value="-Xlint:inaccessible" />
         <parameter value="-Xlint:infer-any" />
         <parameter value="-Xlint:missing-interpolator" />
-        <parameter value="-Xlint:nullary-override" />
         <parameter value="-Xlint:nullary-unit" />
         <parameter value="-Xlint:option-implicit" />
         <parameter value="-Xlint:package-object-classes" />
@@ -30,10 +29,12 @@
         <parameter value="-Xlint:private-shadow" />
         <parameter value="-Xlint:stars-align" />
         <parameter value="-Xlint:type-parameter-shadow" />
+        <parameter value="-Wunused:nowarn" />
         <parameter value="-Wdead-code" />
         <parameter value="-Wextra-implicit" />
         <parameter value="-Wnumeric-widen" />
         <parameter value="-Wunused:implicits" />
+        <parameter value="-Wunused:explicits" />
         <parameter value="-Wunused:imports" />
         <parameter value="-Wunused:locals" />
         <parameter value="-Wunused:params" />
@@ -62,7 +63,6 @@
         <parameter value="-Xlint:inaccessible" />
         <parameter value="-Xlint:infer-any" />
         <parameter value="-Xlint:missing-interpolator" />
-        <parameter value="-Xlint:nullary-override" />
         <parameter value="-Xlint:nullary-unit" />
         <parameter value="-Xlint:option-implicit" />
         <parameter value="-Xlint:package-object-classes" />
@@ -70,10 +70,12 @@
         <parameter value="-Xlint:private-shadow" />
         <parameter value="-Xlint:stars-align" />
         <parameter value="-Xlint:type-parameter-shadow" />
+        <parameter value="-Wunused:nowarn" />
         <parameter value="-Wdead-code" />
         <parameter value="-Wextra-implicit" />
         <parameter value="-Wnumeric-widen" />
         <parameter value="-Wunused:implicits" />
+        <parameter value="-Wunused:explicits" />
         <parameter value="-Wunused:imports" />
         <parameter value="-Wunused:locals" />
         <parameter value="-Wunused:params" />

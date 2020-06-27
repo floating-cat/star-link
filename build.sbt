@@ -1,7 +1,7 @@
 name := "star-link"
 ThisBuild / organization := "cl.monsoon"
 ThisBuild / version := "0.1.0"
-ThisBuild / scalaVersion := "2.13.2"
+ThisBuild / scalaVersion := "2.13.3"
 val projectPackageName = "cl.monsoon.star"
 
 lazy val root = project in file(".")
@@ -70,7 +70,7 @@ lazy val commonDependencies = Seq(
   // TODO
   "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
   "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64",
-  "io.netty" % "netty-tcnative-boringssl-static" % "2.0.30.Final",
+  "io.netty" % "netty-tcnative-boringssl-static" % "2.0.31.Final",
 
   "commons-codec" % "commons-codec" % "1.14",
 

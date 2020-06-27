@@ -10,7 +10,7 @@ import io.netty.util.concurrent.Future
 
 final class ServerConnectHandler extends BaseChannelInboundHandlerAdapter {
 
-  private val logger = Logger[this.type]
+  private val logger = Logger[this.type]()
 
   private var receivedClientHello = false
   private var buffer: ByteBuf = Unpooled.EMPTY_BUFFER
