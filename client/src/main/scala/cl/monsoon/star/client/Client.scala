@@ -22,10 +22,11 @@ object Client {
     configEither match {
       case Right(config) =>
         val socketAddress = config.toSocks5InetSocketAddress
-        val router = new Router(config.rule)
+        val router = new Router(config.ruleOrDefault)
         val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, router, config.testMode))
         Configurator.setRootLevel(config.logLevel)
         logger.info("star-link client start")
+
         BootstrapUtil.server(socketAddress, clientInitializer,
           if (config.systemProxy) {
             SystemProxy.enable(config.listenIp.toString, config.listenPort.value)

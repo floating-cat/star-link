@@ -18,7 +18,7 @@ object ClientConfigParserUtil {
   private case class ClientConfigWithoutProxy(listenIp: IPAddress = DefaultAddress,
                                               listenPort: Port = DefaultSocks5Port,
                                               systemProxy: Boolean = false,
-                                              rule: Rule,
+                                              rule: Option[Rule],
                                               logLevel: Level = Level.INFO,
                                               testMode: Boolean = false) {
 
