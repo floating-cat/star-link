@@ -14,11 +14,10 @@
         </File>
     </Appenders>
     <Loggers>
-        <Root level="info"/>
-        <Logger name="cl.monsoon.star" level="info">
+        <Root level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
-        </Logger>
+        </Root>
         <Logger name="io.netty.wireshark" level="warn">
             <AppenderRef ref="File_Wireshark"/>
         </Logger>

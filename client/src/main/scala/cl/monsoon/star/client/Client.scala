@@ -2,10 +2,11 @@ package cl.monsoon.star.client
 
 import java.nio.file.Path
 
+import cl.monsoon.star.BootstrapUtil
 import cl.monsoon.star.client.config.ClientConfigParserUtil
 import cl.monsoon.star.client.rule.Router
-import cl.monsoon.star.{BootstrapUtil, LogUtil}
 import grizzled.slf4j.Logger
+import org.apache.logging.log4j.core.config.Configurator
 
 object Client {
 
@@ -23,7 +24,7 @@ object Client {
         val socketAddress = config.toSocks5InetSocketAddress
         val router = new Router(config.rule)
         val clientInitializer = new ClientInitializer(new ClientHandler(config.proxy, router, config.testMode))
-        LogUtil.setLevel(config.logLevel)
+        Configurator.setRootLevel(config.logLevel)
         logger.info("star-link client start")
         BootstrapUtil.server(socketAddress, clientInitializer,
           if (config.systemProxy) {

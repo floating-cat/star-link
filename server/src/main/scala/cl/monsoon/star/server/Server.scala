@@ -3,9 +3,10 @@ package cl.monsoon.star.server
 import java.net.InetSocketAddress
 import java.nio.file.Path
 
+import cl.monsoon.star.BootstrapUtil
 import cl.monsoon.star.server.config.ServerConfig
-import cl.monsoon.star.{BootstrapUtil, LogUtil}
 import grizzled.slf4j.Logger
+import org.apache.logging.log4j.core.config.Configurator
 import pureconfig.ConfigSource
 
 object Server {
@@ -21,7 +22,7 @@ object Server {
     configEither match {
       case Right(config) =>
         val socketAddress = new InetSocketAddress(config.listenIp.toInetAddress, config.listenPort.value)
-        LogUtil.setLevel(config.logLevel)
+        Configurator.setRootLevel(config.logLevel)
         logger.info("star-link server start")
         BootstrapUtil.server(socketAddress, new ServerInitializer(config))
 
