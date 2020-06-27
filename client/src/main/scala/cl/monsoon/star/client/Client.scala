@@ -12,7 +12,7 @@ object Client {
   private val logger = Logger[this.type]()
 
   def run(configPath: Path): Unit = {
-    // We need to use toAbsolutePath here in order to let the HOCON file
+    // we need to use toAbsolutePath here in order to let the HOCON file
     // resolve the relative include files correctly
     // TODO check whether this is a bug in the HOCON project
     val configAbsolutePath = configPath.toAbsolutePath
