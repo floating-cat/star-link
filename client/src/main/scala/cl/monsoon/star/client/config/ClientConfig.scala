@@ -12,9 +12,13 @@ import scala.collection.immutable.Map
 final case class ClientConfig(listenIp: IPAddress = DefaultAddress,
                               listenPort: Port = DefaultSocks5Port,
                               systemProxy: Boolean = false,
-                              proxy: Proxy, rule: Rule,
+                              proxy: Proxy, rule: Option[Rule],
                               logLevel: Level = Level.INFO,
                               testMode: Boolean = false) {
+
+  def ruleOrDefault: Rule =
+    rule.getOrElse(Rule(Map.empty, proxy.default))
+
   def toSocks5InetSocketAddress: InetSocketAddress =
     new InetSocketAddress(listenIp.toInetAddress, listenPort.value)
 }
