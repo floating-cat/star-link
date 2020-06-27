@@ -2,7 +2,7 @@
   <configuration default="false" name="StarDevForGraal" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="cl.monsoon.star.link.StarDev" />
     <module name="link" />
-    <option name="VM_PARAMETERS" value="-agentlib:native-image-agent=config-merge-dir=link/src/graal" />
+    <option name="VM_PARAMETERS" value="--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED -Dio.netty.tryReflectionSetAccessible=true -agentlib:native-image-agent=config-merge-dir=link/src/graal" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="cl.monsoon.star.link.*" />
