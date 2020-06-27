@@ -10,7 +10,7 @@ import scala.util.Using
 trait Collector[A] {
 
   val resPath: String
-  val validator: String => A
+  val mapper: String => A
 
   // Paths#get doesn't work for jar.
   lazy val outputUrl: URL = getClass.getResource(resPath)
@@ -22,7 +22,7 @@ trait Collector[A] {
 
   final def get(): List[A] = {
     Using.resource(Source.fromURL(outputUrl)) { source =>
-      source.getLines().map(validator).toList
+      source.getLines().map(mapper).toList
     }
   }
 }
