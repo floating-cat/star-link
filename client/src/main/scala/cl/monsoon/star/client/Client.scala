@@ -13,6 +13,13 @@ object Client {
   private val logger = Logger[this.type]()
 
   def run(configPath: Path): Unit = {
+    runSuspend(configPath)()
+  }
+
+  // JVM doesn't GC local variables
+  // so we return a function here to
+  // exit the scope for these variables
+  def runSuspend(configPath: Path): () => Unit = {
     // we need to use toAbsolutePath here in order to let the HOCON file
     // resolve the relative include files correctly
     // TODO check whether this is a bug in the HOCON project
@@ -27,16 +34,20 @@ object Client {
         Configurator.setRootLevel(config.logLevel)
         logger.info("star-link client start")
 
-        BootstrapUtil.server(socketAddress, clientInitializer,
-          if (config.systemProxy) {
-            SystemProxy.enable(config.listenIp.toString, config.listenPort.value)
-            SystemProxy.addDisablingHook()
-          })
+        // don't let the closure capture the config
+        val systemProxy = config.systemProxy
+        () =>
+          BootstrapUtil.server(socketAddress, clientInitializer,
+            if (systemProxy) {
+              SystemProxy.enable(socketAddress)
+              SystemProxy.addDisablingHook()
+            })
 
       case Left(configReaderFailures) =>
         Console.err.println(s"Failed to parse the config file: $configAbsolutePath\n")
         Console.err.println(configReaderFailures.prettyPrint())
         System.exit(1)
+        throw new IllegalStateException()
     }
   }
 }
