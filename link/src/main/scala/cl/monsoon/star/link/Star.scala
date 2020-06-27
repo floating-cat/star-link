@@ -47,7 +47,7 @@ object Star extends CommandApp(
   }
 )
 
-object StarTest {
+object StarDev {
   def main(args: Array[String]): Unit = {
     Future(Client.run(Paths.get("client.conf")))(
       ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor()))

@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="StarTest" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="cl.monsoon.star.link.StarTest" />
+  <configuration default="false" name="StarDevForGraal" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="cl.monsoon.star.link.StarDev" />
     <module name="link" />
     <option name="VM_PARAMETERS" value="-agentlib:native-image-agent=config-merge-dir=link/src/graal" />
     <extension name="coverage">
