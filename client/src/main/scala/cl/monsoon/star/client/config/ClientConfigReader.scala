@@ -115,7 +115,7 @@ object ClientConfigReader {
             case (_, Left(err)) => Left(concat0(err))
           }
         }.map(_.result())
-          .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
+          .left.map(buf => ConfigReaderFailures(buf.head, buf.tail.result(): _*))
       }
   }
 
@@ -131,7 +131,7 @@ object ClientConfigReader {
       case (_, (Left(err), _)) => Left(concat0(err))
       case (_, (_, Left(err))) => Left(concat0(err))
     }.map(_.result())
-      .left.map(buf => new ConfigReaderFailures(buf.head, buf.tail.result()))
+      .left.map(buf => ConfigReaderFailures(buf.head, buf.tail.result(): _*))
 
   private def concat(buf: ListBuffer[ConfigReaderFailure], errs: ConfigReaderFailures*): ListBuffer[ConfigReaderFailure] = {
     errs.foreach(err => buf += err.head ++= err.tail)
