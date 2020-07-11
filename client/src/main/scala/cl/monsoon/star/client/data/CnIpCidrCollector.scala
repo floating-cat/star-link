@@ -5,8 +5,9 @@ import inet.ipaddr.IPAddress
 
 import scala.io.Source
 
-object CnIpCidrCollector extends Collector[IPAddress] {
+object CnIpCidrCollector extends Collector {
 
+  override type Out = IPAddress
   override val resPath = "/data/cn_ip_cidr_list.txt"
   override val mapper: String => IPAddress = IpAddressUtil.toIpOrCidr
 
