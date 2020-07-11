@@ -1,18 +1,15 @@
 package cl.monsoon.star.server
 
-import io.netty.channel.Channel
 import io.netty.handler.ssl.util.SelfSignedCertificate
-import io.netty.handler.ssl.{SslContextBuilder, SslHandler, SslProvider}
+import io.netty.handler.ssl.{SslContext, SslContextBuilder, SslProvider}
 
 object SslUtil {
 
-  def handler(ch: Channel): SslHandler = {
+  def context: SslContext = {
     val ssc = new SelfSignedCertificate
-    val sslEngine = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
-      .sslProvider(SslProvider.OPENSSL_REFCNT)
+    SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
+      .sslProvider(SslProvider.OPENSSL)
       .protocols("TLSv1.2", "TLSv1.3")
       .build()
-      .newEngine(ch.alloc())
-    new SslHandler(sslEngine)
   }
 }
