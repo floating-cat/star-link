@@ -12,6 +12,7 @@ import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
 import io.netty.handler.codec.http._
 import io.netty.handler.codec.socksx.v5.{DefaultSocks5CommandResponse, Socks5CommandStatus, Socks5ServerEncoder}
+import io.netty.handler.ssl.SslContext
 import io.netty.util.concurrent.Future
 
 import scala.collection.concurrent.TrieMap
@@ -121,8 +122,9 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
 }
 
 @Sharable
-private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo: ServerInfo,
-                                                 devMode: Boolean) extends ClientConnectionHandler {
+private final class ClientConnectionProxyHandler(stringTag: ProxyTag,
+                                                 sslContext: SslContext,
+                                                 serverInfo: ServerInfo) extends ClientConnectionHandler {
 
   override def serverSocketAddress(httpProxyOrSocks: HttpProxyOrSocks5): InetSocketAddress =
     serverInfo.hostname.asInetSocketAddress()
@@ -131,7 +133,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag, serverInfo
     logger.debug(s"Proxy request for ${httpProxyOrSocks.merge}")
 
     outChannel.pipeline().addLast(
-      SslUtil.handler(outChannel, serverInfo, devMode),
+      sslContext.newHandler(outChannel.alloc(), serverInfo.hostname.getHost, serverInfo.hostname.getPort),
       ClientHelloEncoder(stringTag, serverInfo))
 
     outChannel.writeAndFlush(httpProxyOrSocks)
@@ -184,6 +186,8 @@ object ClientConnectionHandler {
   val direct: ChannelInboundHandler = ClientConnectionDirectHandler
   val reject: ChannelInboundHandler = ClientConnectionRejectHandler
 
-  def proxy(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ChannelInboundHandler =
-    proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientConnectionProxyHandler(stringTag, serverInfo, devMode))
+  def proxy(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ChannelInboundHandler = {
+    val sslContext = SslUtil.context(devMode)
+    proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientConnectionProxyHandler(stringTag, sslContext, serverInfo))
+  }
 }
