@@ -7,10 +7,11 @@ import scala.io.Source
 import scala.jdk.CollectionConverters._
 import scala.util.Using
 
-trait Collector[A] {
+trait Collector {
 
+  type Out
   val resPath: String
-  val mapper: String => A
+  val mapper: String => Out
 
   // Paths#get doesn't work for jar.
   lazy val outputUrl: URL = getClass.getResource(resPath)
@@ -20,7 +21,7 @@ trait Collector[A] {
     Files.write(path, output.to(Iterable).asJava)
   }
 
-  final def get(): List[A] = {
+  final def get(): List[Out] = {
     Using.resource(Source.fromURL(outputUrl)) { source =>
       source.getLines().map(mapper).toList
     }

@@ -5,8 +5,9 @@ import inet.ipaddr.HostName
 
 import scala.io.Source
 
-object CnDomainSuffixCollector extends Collector[HostName] {
+object CnDomainSuffixCollector extends Collector {
 
+  override type Out = HostName
   override val resPath = "/data/cn_domain_suffix_list.txt"
   override val mapper: String => HostName = IpAddressUtil.toDomainName
 

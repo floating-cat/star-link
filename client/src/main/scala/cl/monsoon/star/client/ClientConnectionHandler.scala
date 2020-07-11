@@ -19,13 +19,14 @@ import scala.collection.concurrent.TrieMap
 import scala.util.chaining._
 
 @Sharable
-private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
+private sealed trait ClientTcpConnectionHandler extends BaseChannelInboundHandlerAdapter {
 
   protected val logger: Logger = Logger[this.type]()
 
-  final override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
-    val promise = inContext.executor.newPromise[Channel]
-    val inChannel = inContext.channel
+  override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
+    val httpProxyOrSocks = msg.asInstanceOf[HttpProxyOrSocks5]
+    val promise = ctx.executor.newPromise[Channel]
+    val inChannel = ctx.channel
     promise.addListener { future: Future[Channel] =>
       if (future.isSuccess) {
         onConnected(httpProxyOrSocks, inChannel, future.getNow)
@@ -122,9 +123,9 @@ private sealed trait ClientConnectionHandler extends BaseSimpleChannelInboundHan
 }
 
 @Sharable
-private final class ClientConnectionProxyHandler(stringTag: ProxyTag,
-                                                 sslContext: SslContext,
-                                                 serverInfo: ServerInfo) extends ClientConnectionHandler {
+private final class ClientTcpConnectionProxyHandler(stringTag: ProxyTag,
+                                                    sslContext: SslContext,
+                                                    serverInfo: ServerInfo) extends ClientTcpConnectionHandler {
 
   override def serverSocketAddress(httpProxyOrSocks: HttpProxyOrSocks5): InetSocketAddress =
     serverInfo.hostname.asInetSocketAddress()
@@ -151,7 +152,7 @@ private final class ClientConnectionProxyHandler(stringTag: ProxyTag,
 }
 
 @Sharable
-private object ClientConnectionDirectHandler extends ClientConnectionHandler {
+private object ClientTcpConnectionDirectHandler extends ClientTcpConnectionHandler {
 
   override def serverSocketAddress(httpProxyOrSocks: HttpProxyOrSocks5): InetSocketAddress =
     httpProxyOrSocks.fold(
@@ -165,11 +166,13 @@ private object ClientConnectionDirectHandler extends ClientConnectionHandler {
 }
 
 @Sharable
-private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHandler[HttpProxyOrSocks5] {
+private object ClientConnectionRejectHandler extends BaseChannelInboundHandlerAdapter {
 
   protected val logger: Logger = Logger[this.type]()
 
-  override def channelRead0(inContext: ChannelHandlerContext, httpProxyOrSocks: HttpProxyOrSocks5): Unit = {
+  override def channelRead(ctx: ChannelHandlerContext, msg: Any): Unit = {
+    val httpProxyOrSocks = msg.asInstanceOf[HttpProxyOrSocks5]
+    val inContext = ctx
     val response = httpProxyOrSocks.fold(
       httpProxy => new DefaultHttpResponse(httpProxy.httpVersion, HttpResponseStatus.FORBIDDEN),
       socks5 => new DefaultSocks5CommandResponse(Socks5CommandStatus.FORBIDDEN, socks5.dstAddrType))
@@ -182,12 +185,12 @@ private object ClientConnectionRejectHandler extends BaseSimpleChannelInboundHan
 
 object ClientConnectionHandler {
 
-  private val proxyHandlerInstancePool = TrieMap[ProxyTag, ClientConnectionHandler]()
-  val direct: ChannelInboundHandler = ClientConnectionDirectHandler
+  private val proxyHandlerInstancePool = TrieMap[ProxyTag, ClientTcpConnectionHandler]()
+  val direct: ChannelInboundHandler = ClientTcpConnectionDirectHandler
   val reject: ChannelInboundHandler = ClientConnectionRejectHandler
 
   def proxy(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ChannelInboundHandler = {
     val sslContext = SslUtil.context(devMode)
-    proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientConnectionProxyHandler(stringTag, sslContext, serverInfo))
+    proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientTcpConnectionProxyHandler(stringTag, sslContext, serverInfo))
   }
 }
