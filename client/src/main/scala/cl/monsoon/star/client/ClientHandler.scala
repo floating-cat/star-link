@@ -24,14 +24,13 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
       case commandRequest: Socks5CommandRequest =>
         val ctxPipe = ctx.pipeline()
         ctxPipe.remove(classOf[Socks5CommandRequestDecoder])
-        // TODO
         if (commandRequest.`type` == Socks5CommandType.CONNECT) {
           ctxPipe.addLast(decide(commandRequest.dstAddr()))
           ctx.fireChannelRead(Right(commandRequest))
           ctxPipe.remove(this)
         } else {
           ctx.close
-          logger.info(s"SOCKS5 command (${commandRequest.`type`}) refused")
+          logger.warn(s"SOCKS5 command (${commandRequest.`type`}) refused")
         }
 
       case httpProxy: HttpProxy =>
@@ -47,9 +46,9 @@ final class ClientHandler(proxy: Proxy, router: Router, devMode: Boolean) extend
 
   private def decide(address: String): ChannelInboundHandler =
     router.decide(address) match {
-      case ProxyRouteResult(tag) => ClientConnectionHandler.proxy(tag, proxy.server(tag), devMode)
-      case DefaultProxyRouteResult => ClientConnectionHandler.proxy(proxy.default, proxy.server(proxy.default), devMode)
-      case DirectRouteResult => ClientConnectionHandler.direct
-      case RejectRouteResult => ClientConnectionHandler.reject
+      case ProxyRouteResult(tag) => ClientTcpConnectionHandler.proxy(tag, proxy.server(tag), devMode)
+      case DefaultProxyRouteResult => ClientTcpConnectionHandler.proxy(proxy.default, proxy.server(proxy.default), devMode)
+      case DirectRouteResult => ClientTcpConnectionHandler.direct
+      case RejectRouteResult => ClientTcpConnectionHandler.reject
     }
 }

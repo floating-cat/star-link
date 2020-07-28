@@ -183,7 +183,7 @@ private object ClientConnectionRejectHandler extends BaseChannelInboundHandlerAd
   }
 }
 
-object ClientConnectionHandler {
+object ClientTcpConnectionHandler {
 
   private val proxyHandlerInstancePool = TrieMap[ProxyTag, ClientTcpConnectionHandler]()
   val direct: ChannelInboundHandler = ClientTcpConnectionDirectHandler
