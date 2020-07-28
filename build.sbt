@@ -16,7 +16,8 @@ lazy val link = project
 
     mainClass in Compile := Some(s"$projectPackageName.link.Star"),
     discoveredMainClasses in Compile := Seq(),
-    bashScriptConfigLocation := Some("${app_home}/../conf/application.ini"),
+    bashScriptConfigLocation := Some("${app_home}/../conf/application_unix.ini"),
+    batScriptConfigLocation := Some("%APP_HOME%\\conf\\application_win.ini"),
 
     graalVMNativeImageCommand := "/usr/lib/jvm/java-11-graalvm/bin/native-image",
     graalVMNativeImageOptions ++= {
