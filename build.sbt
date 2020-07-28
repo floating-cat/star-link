@@ -40,16 +40,32 @@ lazy val link = project
       "-J-Xmx30m", "-J-XX:MaxDirectMemorySize=30m"),
     dockerExposedVolumes := Seq("/opt/docker/logs")
   )
-  .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(GraalVMNativeImagePlugin)
   .enablePlugins(DockerPlugin)
 
 lazy val common = project
   .settings(
-    libraryDependencies ++= commonDependencies,
+    buildInfoKeys := Seq[BuildInfoKey](root / name, version),
+    buildInfoPackage := projectPackageName,
+    valueDiscardSetting,
+    libraryDependencies ++= Seq(
+      "io.netty" % "netty-all" % nettyVersion,
+      // TODO
+      "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
+      "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64",
+      "io.netty" % "netty-tcnative-boringssl-static" % "2.0.31.Final",
+
+      "commons-codec" % "commons-codec" % "1.14",
+
+      "com.github.pureconfig" %% "pureconfig" % "0.13.0",
+      "com.github.seancfoley" % "ipaddress" % "5.3.1",
+
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.13.3",
+      "org.clapper" %% "grizzled-slf4j" % "1.3.4",
+    )
   )
-  .settings(valueDiscardSetting)
+  .enablePlugins(BuildInfoPlugin)
 
 lazy val client = project
   .dependsOn(common)
@@ -62,22 +78,7 @@ lazy val server = project
   .dependsOn(common)
   .settings(valueDiscardSetting)
 
-val nettyVersion = "4.1.51.Final"
-lazy val commonDependencies = Seq(
-  "io.netty" % "netty-all" % nettyVersion,
-  // TODO
-  "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
-  "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64",
-  "io.netty" % "netty-tcnative-boringssl-static" % "2.0.31.Final",
-
-  "commons-codec" % "commons-codec" % "1.14",
-
-  "com.github.pureconfig" %% "pureconfig" % "0.13.0",
-  "com.github.seancfoley" % "ipaddress" % "5.3.1",
-
-  "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.13.3",
-  "org.clapper" %% "grizzled-slf4j" % "1.3.4",
-)
+lazy val nettyVersion = "4.1.51.Final"
 
 lazy val valueDiscardSetting =
   Seq(scalacOptions ~= (_.filterNot(Set("-Wvalue-discard"))))
