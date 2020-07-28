@@ -190,7 +190,7 @@ object ClientTcpConnectionHandler {
   val reject: ChannelInboundHandler = ClientConnectionRejectHandler
 
   def proxy(stringTag: ProxyTag, serverInfo: ServerInfo, devMode: Boolean): ChannelInboundHandler = {
-    val sslContext = SslUtil.context(devMode)
-    proxyHandlerInstancePool.getOrElseUpdate(stringTag, new ClientTcpConnectionProxyHandler(stringTag, sslContext, serverInfo))
+    proxyHandlerInstancePool.getOrElseUpdate(stringTag,
+      new ClientTcpConnectionProxyHandler(stringTag, SslUtil.context(devMode), serverInfo))
   }
 }
