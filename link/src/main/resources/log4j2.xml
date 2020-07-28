@@ -5,11 +5,11 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </Console>
 
-        <File name="File" fileName="logs/star_link.log" append="false">
+        <File name="File" fileName="logs/star_link.log" append="true">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
         </File>
 
-        <File name="File_Wireshark" fileName="logs/star_link_wireshark.log" append="false">
+        <File name="File_Wireshark" fileName="logs/star_link_wireshark.log" append="true" createOnDemand="true">
             <PatternLayout pattern="%msg%n"/>
         </File>
     </Appenders>
