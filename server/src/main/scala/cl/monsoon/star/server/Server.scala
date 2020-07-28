@@ -3,7 +3,7 @@ package cl.monsoon.star.server
 import java.net.InetSocketAddress
 import java.nio.file.Path
 
-import cl.monsoon.star.BootstrapUtil
+import cl.monsoon.star.{BootstrapUtil, BuildInfo}
 import cl.monsoon.star.server.config.ServerConfig
 import grizzled.slf4j.Logger
 import org.apache.logging.log4j.core.config.Configurator
@@ -30,7 +30,7 @@ object Server {
       case Right(config) =>
         val socketAddress = new InetSocketAddress(config.listenIp.toInetAddress, config.listenPort.value)
         Configurator.setRootLevel(config.logLevel)
-        logger.info("star-link server start")
+        logger.info(s"star-link server v${BuildInfo.version} start")
         () => BootstrapUtil.server(socketAddress, new ServerInitializer(config))
 
       case Left(configReaderFailures) =>
