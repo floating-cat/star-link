@@ -1,6 +1,6 @@
 name := "star-link"
 ThisBuild / organization := "cl.monsoon"
-ThisBuild / version := "0.1.1"
+ThisBuild / version := "0.1.2"
 ThisBuild / scalaVersion := "2.13.3"
 val projectPackageName = "cl.monsoon.star"
 
@@ -72,7 +72,7 @@ lazy val client = project
   .dependsOn(common)
   .settings(
     valueDiscardSetting,
-    libraryDependencies += "net.java.dev.jna" % "jna" % "5.5.0",
+    libraryDependencies += "net.java.dev.jna" % "jna" % "5.6.0",
   )
 
 lazy val server = project
