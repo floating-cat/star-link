@@ -12,7 +12,7 @@ lazy val link = project
   .settings(
     buildInfoKeys := Seq[BuildInfoKey](root / name, version),
     buildInfoPackage := projectPackageName,
-    libraryDependencies += "com.monovore" %% "decline" % "1.2.0",
+    libraryDependencies += "com.monovore" %% "decline" % "1.3.0",
 
     mainClass in Compile := Some(s"$projectPackageName.link.Star"),
     discoveredMainClasses in Compile := Seq(),
@@ -55,12 +55,12 @@ lazy val common = project
       // TODO
       "io.netty" % "netty-transport-native-epoll" % nettyVersion classifier "linux-x86_64",
       "io.netty" % "netty-transport-native-kqueue" % nettyVersion classifier "osx-x86_64",
-      "io.netty" % "netty-tcnative-boringssl-static" % "2.0.31.Final",
+      "io.netty" % "netty-tcnative-boringssl-static" % "2.0.34.Final",
 
-      "commons-codec" % "commons-codec" % "1.14",
+      "commons-codec" % "commons-codec" % "1.15",
 
-      "com.github.pureconfig" %% "pureconfig" % "0.13.0",
-      "com.github.seancfoley" % "ipaddress" % "5.3.1",
+      "com.github.pureconfig" %% "pureconfig" % "0.14.0",
+      "com.github.seancfoley" % "ipaddress" % "5.3.3",
 
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.13.3",
       "org.clapper" %% "grizzled-slf4j" % "1.3.4",
@@ -79,7 +79,7 @@ lazy val server = project
   .dependsOn(common)
   .settings(valueDiscardSetting)
 
-lazy val nettyVersion = "4.1.51.Final"
+lazy val nettyVersion = "4.1.52.Final"
 
 lazy val valueDiscardSetting =
   Seq(scalacOptions ~= (_.filterNot(Set("-Wvalue-discard"))))

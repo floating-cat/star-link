@@ -10,8 +10,6 @@ object SslUtil {
   def context(trustInsecure: Boolean): SslContext = {
     SslContextBuilder.forClient()
       .sslProvider(SslProvider.OPENSSL)
-      // TODO
-      .protocols("TLSv1.2", "TLSv1.3")
       .pipe { builder =>
         if (!trustInsecure) {
           builder
